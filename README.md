@@ -33,22 +33,3 @@ Developers should expect to rework and resubmit patches if the code doesn't
 match the project's coding conventions (see `doc/coding.txt`) or are
 controversial.
 
-
-
-Compiling the memorycoin daemon on Debian + Ubuntu
---------------------------------------------------
-
-#### Update and install dependencies
-
-    apt-get update && apt-get install -y git make g++ build-essential libminiupnpc-dev libdb++-dev libgmp-dev libssl-dev dos2unix libboost-all-dev
-
-#### Download the source code
-
-    git clone https://github.com/memorycoin/memorycoin
-
-#### Compile memorycoind
-
-    cd memorycoin/src && make -f makefile.unix
-
-
-
