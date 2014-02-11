@@ -6,6 +6,10 @@
 #include "main.h"
 #include <openssl/evp.h>
 
+#ifdef QT_CORE_LIB
+#include <QtGlobal> // need for Q_OS_MAC variable
+#endif
+
 namespace mc 
 {
 	#define PSUEDORANDOM_DATA_SIZE 30 //2^30 = 1GB
