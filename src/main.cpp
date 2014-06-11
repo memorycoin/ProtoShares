@@ -41,6 +41,7 @@ using namespace boost;
 // Global state
 //
 static int DIFFICULTYKIMOTOFORKHEIGHT = 606;
+static int V3FORKHEIGHT = 50000;
 //static int DIFFICULTYKIMOTOFORKHEIGHT = 750;
 
 CCriticalSection cs_setpwalletRegistered;
@@ -1126,8 +1127,10 @@ int64 static GetGrantValue(int64 nHeight)
 }
 
 static const int64 nTargetTimespan = 60 * 60 * 2; // adjust difficulty based on the past 2 hours
-static const int64 nTargetSpacing = 6 * 60; // five minutes
+static const int64 nTargetSpacing = 6 * 60; // six minutes
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
+static const int64 nDiffWindow = 20; // two hours
+static const int64 nLifeWindow = 40; // four hours
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -1223,6 +1226,93 @@ BlockCreating = BlockCreating;
     return bnNew.GetCompact();
 }
 
+
+// Temporal retargeting - from Heavycoin
+unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
+	static CBigNum bnCurr;
+    CBigNum bnLast;
+    bnLast.SetCompact(pindexLast->nBits);
+
+    if (bnCurr == 0)
+        bnCurr = bnLast;
+
+    // Use measurements over last 4 hours
+    unsigned int i;
+    CBigNum bnNew = 0;
+    unsigned int count = 0;
+    int64 now = (int64)pblock->nTime; // Can be out by 2hrs
+    const CBlockIndex* pindexFirst = pindexLast;
+    for (i = 0; pindexFirst && pindexFirst->pprev &&
+         now - pindexFirst->GetBlockTime() < nLifeWindow * nTargetSpacing; i++) {
+        if (*pindexFirst->pprev->phashBlock == hashGenesisBlock) {
+                static int logged1;
+                if (!logged1) {
+                    printf("Avoiding retarget against genesis block\n");
+                    logged1 = 1;
+                }
+                break;
+        }
+
+        if (count < nDiffWindow) {
+            CBigNum bnDiff;
+            bnDiff.SetCompact(pindexFirst->nBits);
+            int64 nTime = AbsTime(pindexFirst->GetBlockTime(), pindexFirst->pprev->GetBlockTime());
+
+            // Adjusted difficulty
+            bnDiff *= nTime;
+            bnDiff /= nTargetSpacing;
+            bnNew += bnDiff;
+            count++;
+        }
+
+        pindexFirst = pindexFirst->pprev;
+    }
+
+    if (!count) {
+        printf("Retarget: Bumping count = 1\n");
+        bnNew = bnProofOfWorkLimit;
+        count = 1;
+    }
+    bnNew /= count;
+
+    // Heavycoin Temporal Retargeting - exits "blackhole" in ~3hrs
+    if (pindexLast->nHeight > nLifeWindow && count < nLifeWindow/4) {
+        int min = nLifeWindow/4 - count;
+        printf("Retarget: **** Heavycoin Temporal Retargeting **** %d/%d : factor = %d\n",
+               count, (int)nLifeWindow/4, (int)pow(2.0f, min));
+
+        bnNew *= (int)pow(2.0f, min);
+
+        printf("Retarget: heal = %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+    }
+    else {
+        // Soft limit
+        if (bnNew < bnLast/2)
+            bnNew = bnLast/2;
+        else if (bnNew > 4*bnLast)
+            bnNew = 4*bnLast;
+    }
+
+    // Hard limit
+    if (bnNew > bnProofOfWorkLimit)
+        bnNew = bnProofOfWorkLimit;
+
+    // Only retarget every nInterval blocks on difficulty increase
+    if (bnNew < bnLast && (pindexLast->nHeight + 1) % nInterval != 0) {
+        // Sample the current block time over more blocks before
+        // increasing the difficulty.
+
+        return pindexLast->nBits;
+    }
+
+    if (bnCurr.GetCompact() != bnNew.GetCompact()) {
+        printf("Retarget: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+        bnCurr = bnNew;
+    }
+
+    return bnCurr.GetCompact();
+}
+
 unsigned int static NeoGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     static const int64 BlocksTargetSpacing = 6 * 60; // 6 minutes
@@ -1314,7 +1404,9 @@ unsigned int static OldGetNextWorkRequired(const CBlockIndex* pindexLast, const 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     assert(pindexLast);
- 
+	if(pindexLast->nHeight > V3FORKHEIGHT) {
+		return TempGetNextWorkRequired(pindexLast, pblock);
+	}
     if (pindexLast->nHeight > DIFFICULTYKIMOTOFORKHEIGHT) {
         return NeoGetNextWorkRequired(pindexLast, pblock);
     } else {
