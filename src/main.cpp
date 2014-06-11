@@ -5262,7 +5262,7 @@ public:
 static const int64 GRANTBLOCKINTERVAL = (2*60*60)/nTargetSpacing;
 
 
-static string GRANTPREFIX ="MVTE";
+static string GRANTPREFIX ="MMC";
 static int numberOfOffices = 6;
 string electedOffices[7];
 //= {"ceo","cto","cno","cmo","cso","cha","XFT"};
