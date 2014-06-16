@@ -1127,6 +1127,7 @@ int64 static GetGrantValue(int64 nHeight)
 }
 
 static const int64 nTargetTimespan = 60 * 60 * 2; // adjust difficulty based on the past 2 hours
+static const int64 nNewTargetSpacing = 8 * 60; // eight minutes
 static const int64 nTargetSpacing = 6 * 60; // six minutes
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
 static const int64 nDiffWindow = 20; // two hours
@@ -1226,6 +1227,13 @@ BlockCreating = BlockCreating;
     return bnNew.GetCompact();
 }
 
+int64 AbsTime(int64 t0, int64 t1)
+{
+    if (t0 > t1)
+        return t0 - t1;
+    else
+        return t1 - t0;
+}
 
 // Temporal retargeting - from Heavycoin
 unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
@@ -1243,7 +1251,7 @@ unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, c
     int64 now = (int64)pblock->nTime; // Can be out by 2hrs
     const CBlockIndex* pindexFirst = pindexLast;
     for (i = 0; pindexFirst && pindexFirst->pprev &&
-         now - pindexFirst->GetBlockTime() < nLifeWindow * nTargetSpacing; i++) {
+         now - pindexFirst->GetBlockTime() < nLifeWindow * nNewTargetSpacing; i++) {
         if (*pindexFirst->pprev->phashBlock == hashGenesisBlock) {
                 static int logged1;
                 if (!logged1) {
@@ -1260,7 +1268,7 @@ unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, c
 
             // Adjusted difficulty
             bnDiff *= nTime;
-            bnDiff /= nTargetSpacing;
+            bnDiff /= nNewTargetSpacing;
             bnNew += bnDiff;
             count++;
         }
@@ -1405,7 +1413,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 {
     assert(pindexLast);
 	if(pindexLast->nHeight > V3FORKHEIGHT) {
-		return TempGetNextWorkRequired(pindexLast, pblock);
+		return TemporalGetNextWorkRequired(pindexLast, pblock);
 	}
     if (pindexLast->nHeight > DIFFICULTYKIMOTOFORKHEIGHT) {
         return NeoGetNextWorkRequired(pindexLast, pblock);
