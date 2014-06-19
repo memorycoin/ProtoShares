@@ -30,11 +30,11 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 
 #if (QT_VERSION >= 0x040700)
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->addressIn_SM->setPlaceholderText(tr("Enter a MemoryCoin address (e.g. MVTEchao4RjkTTyjMcYf8dnpQ7BqJdNVhr)"));
+    ui->addressIn_SM->setPlaceholderText(tr("Enter a Memorycoin address (e.g. MVTEchao4RjkTTyjMcYf8dnpQ7BqJdNVhr)"));
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
 
-    ui->addressIn_VM->setPlaceholderText(tr("Enter a MemoryCoin address (e.g. MVTEchao4RjkTTyjMcYf8dnpQ7BqJdNVhr)"));
-    ui->signatureIn_VM->setPlaceholderText(tr("Enter MemoryCoin signature"));
+    ui->addressIn_VM->setPlaceholderText(tr("Enter a Memorycoin address (e.g. MVTEchao4RjkTTyjMcYf8dnpQ7BqJdNVhr)"));
+    ui->signatureIn_VM->setPlaceholderText(tr("Enter Memorycoin signature"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->addressIn_SM, this);
