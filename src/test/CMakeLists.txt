@@ -79,13 +79,13 @@ include_directories(${BDB_INCLUDE}
                     ${OPENSSL_INCLUDE_DIRS}
                     )
 
-add_executable(test_bitcoin test_bitcoin.cpp
+add_executable(test_memorycoin test_memorycoin.cpp
                ${TEST_SOURCES}
                ${JSON_TEST_FILES}
                ${RAW_TEST_FILES}
 	       )
 
-target_link_libraries(test_bitcoin bitcoin
+target_link_libraries(test_memorycoin memorycoin
                       ${CMAKE_THREAD_LIBS_INIT}
 	      	      ${BDB_LIBRARY}
 	              ${Boost_LIBRARIES}
@@ -93,6 +93,6 @@ target_link_libraries(test_bitcoin bitcoin
 	      	      )
 
 enable_testing()
-add_test(TestBitcoin test_bitcoin)
+add_test(TestMemorycoin test_memorycoin)
 
 
