@@ -1,3 +1,8 @@
+// Copyright (c) 2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #include <boost/unordered_map.hpp>
 #include <iostream>
 #include <openssl/sha.h>
