@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #include "db.h"
 #include "net.h"
 #include "init.h"
@@ -1123,7 +1123,7 @@ void ThreadMapPort()
             }
         }
 
-        string strDesc = "MemoryCoin " + FormatFullVersion();
+        string strDesc = "Memorycoin " + FormatFullVersion();
 
         try {
             for(;;) {
@@ -1689,7 +1689,7 @@ bool BindListenPort(const CService &addrBind, string& strError)
     {
         int nErr = WSAGetLastError();
         if (nErr == WSAEADDRINUSE)
-            strError = strprintf(_("Unable to bind to %s on this computer. MemoryCoin is probably already running."), addrBind.ToString().c_str());
+            strError = strprintf(_("Unable to bind to %s on this computer. Memorycoin is probably already running."), addrBind.ToString().c_str());
         else
             strError = strprintf(_("Unable to bind to %s on this computer (bind returned error %d, %s)"), addrBind.ToString().c_str(), nErr, strerror(nErr));
         printf("%s\n", strError.c_str());
@@ -1815,7 +1815,7 @@ void StartNode(boost::thread_group& threadGroup)
 bool StopNode()
 {
     printf("StopNode()\n");
-    GenerateBitcoins(false, NULL);
+    GenerateMemorycoins(false, NULL);
     MapPort(false);
     nTransactionsUpdated++;
     if (semOutbound)
