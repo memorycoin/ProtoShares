@@ -8,7 +8,7 @@
 #include "ui_rpcconsole.h"
 
 #include "clientmodel.h"
-#include "nemorycoinrpc.h"
+#include "memorycoinrpc.h"
 #include "guiutil.h"
 
 #include <QTime>
