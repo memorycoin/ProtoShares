@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Name=Memorycoin
-Comment=Bitcoin P2P Cryptocurrency
+Comment=Memorycoin P2P Cryptocurrency
 Comment[fr]=Memorycoin, monnaie virtuelle cryptographique pair à pair
 Comment[tr]=Memorycoin, eşten eşe kriptografik sanal para birimi
 Exec=bitcoin-qt %u
