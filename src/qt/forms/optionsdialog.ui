@@ -62,7 +62,7 @@
           </widget>
          </item>
          <item>
-          <widget class="BitcoinAmountField" name="transactionFee">
+          <widget class="MemorycoinAmountField" name="transactionFee">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -84,12 +84,12 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="bitcoinAtStartup">
+        <widget class="QCheckBox" name="memorycoinAtStartup">
          <property name="toolTip">
-          <string>Automatically start MemoryCoin after logging in to the system.</string>
+          <string>Automatically start Memorycoin after logging in to the system.</string>
          </property>
          <property name="text">
-          <string>&amp;Start MemoryCoin on system login</string>
+          <string>&amp;Start Memorycoin on system login</string>
          </property>
         </widget>
        </item>
@@ -146,7 +146,7 @@
        <item>
         <widget class="QCheckBox" name="mapPortUpnp">
          <property name="toolTip">
-          <string>Automatically open the MemoryCoin client port on the router. This only works when your router supports UPnP and it is enabled.</string>
+          <string>Automatically open the Memorycoin client port on the router. This only works when your router supports UPnP and it is enabled.</string>
          </property>
          <property name="text">
           <string>Map port using &amp;UPnP</string>
@@ -156,7 +156,7 @@
        <item>
         <widget class="QCheckBox" name="connectSocks">
          <property name="toolTip">
-          <string>Connect to the MemoryCoin network through a SOCKS proxy (e.g. when connecting through Tor).</string>
+          <string>Connect to the Memorycoin network through a SOCKS proxy (e.g. when connecting through Tor).</string>
          </property>
          <property name="text">
           <string>&amp;Connect through SOCKS proxy:</string>
@@ -330,7 +330,7 @@
          <item>
           <widget class="QValueComboBox" name="lang">
            <property name="toolTip">
-            <string>The user interface language can be set here. This setting will take effect after restarting MemoryCoin.</string>
+            <string>The user interface language can be set here. This setting will take effect after restarting Memorycoin.</string>
            </property>
           </widget>
          </item>
@@ -363,7 +363,7 @@
        <item>
         <widget class="QCheckBox" name="displayAddresses">
          <property name="toolTip">
-          <string>Whether to show MemoryCoin addresses in the transaction list or not.</string>
+          <string>Whether to show Memorycoin addresses in the transaction list or not.</string>
          </property>
          <property name="text">
           <string>&amp;Display addresses in transaction list</string>
@@ -467,9 +467,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>BitcoinAmountField</class>
+   <class>MemorycoinAmountField</class>
    <extends>QSpinBox</extends>
-   <header>bitcoinamountfield.h</header>
+   <header>memorycoinamountfield.h</header>
   </customwidget>
   <customwidget>
    <class>QValueComboBox</class>
