@@ -1039,7 +1039,7 @@ void openWebsite(string url){
 }
 
 void MemorycoinGUI::currentVotes(){
-	openWebsite("http://mmcvotes.com/address/"+getDefaultWalletAddress());
+	openWebsite("http://mmc-votes.com/address/"+getDefaultWalletAddress());
 }
 
 void MemorycoinGUI::howToVote(){
@@ -1051,7 +1051,7 @@ void MemorycoinGUI::currentCandidates(){
 }
 
 void MemorycoinGUI::currentResults(){
-	openWebsite("http://mmcvotes.com/");
+	openWebsite("http://mmc-votes.com/");
 }
 
 void MemorycoinGUI::balanceMMC(){
