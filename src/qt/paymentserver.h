@@ -1,9 +1,14 @@
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #ifndef PAYMENTSERVER_H
 #define PAYMENTSERVER_H
 
 //
 // This class handles payment requests from clicking on
-// bitcoin: URIs
+// memorycoin: URIs
 //
 // This is somewhat tricky, because we have to deal with
 // the situation where the user clicks on a link during
