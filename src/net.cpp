@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #include "db.h"
 #include "net.h"
 #include "init.h"
@@ -1815,7 +1815,7 @@ void StartNode(boost::thread_group& threadGroup)
 bool StopNode()
 {
     printf("StopNode()\n");
-    GenerateBitcoins(false, NULL);
+    GenerateMemorycoins(false, NULL);
     MapPort(false);
     nTransactionsUpdated++;
     if (semOutbound)
