@@ -1,4 +1,10 @@
-#include "bitcoinaddressvalidator.h"
+# Copyright (c) 2010 Satoshi Nakamoto
+# Copyright (c) 2009-2012 The Memorycoin developers
+# Distributed under the MIT/X11 software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2013-2014 Memorycoin Dev Team
+
+#include "memorycoinaddressvalidator.h"
 
 /* Base58 characters are:
      "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -13,12 +19,12 @@
   - '0' and 'O' to 'o'
 */
 
-BitcoinAddressValidator::BitcoinAddressValidator(QObject *parent) :
+MemorycoinAddressValidator::MemorycoinAddressValidator(QObject *parent) :
     QValidator(parent)
 {
 }
 
-QValidator::State BitcoinAddressValidator::validate(QString &input, int &pos) const
+QValidator::State MemorycoinAddressValidator::validate(QString &input, int &pos) const
 {
     // Correction
     for(int idx=0; idx<input.size();)
