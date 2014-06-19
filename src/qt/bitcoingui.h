@@ -1,5 +1,5 @@
-#ifndef BITCOINGUI_H
-#define BITCOINGUI_H
+#ifndef MEMORYCOINGUI_H
+#define MEMORYCOINGUI_H
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
@@ -35,25 +35,25 @@ class QAction;
 QT_END_NAMESPACE
 
 /**
-  Bitcoin GUI main class. This class represents the main window of the Bitcoin UI. It communicates with both the client and
+  Memorycoin GUI main class. This class represents the main window of the Memorycoin UI. It communicates with both the client and
   wallet models to give the user an up-to-date view of the current core state.
 */
-class BitcoinGUI : public QMainWindow
+class MemorycoinGUI : public QMainWindow
 {
     Q_OBJECT
 
 public:
     static const QString DEFAULT_WALLET;
 
-    explicit BitcoinGUI(QWidget *parent = 0);
-    ~BitcoinGUI();
+    explicit MemorycoinGUI(QWidget *parent = 0);
+    ~MemorycoinGUI();
 
     /** Set the client model.
         The client model represents the part of the core that communicates with the P2P network, and is wallet-agnostic.
     */
     void setClientModel(ClientModel *clientModel);
     /** Set the wallet model.
-        The wallet model represents a bitcoin wallet, and offers access to the list of transactions, address book and sending
+        The wallet model represents a memorycoin wallet, and offers access to the list of transactions, address book and sending
         functionality.
     */
 
@@ -243,4 +243,4 @@ private slots:
     void currentResults();
 };
 
-#endif // BITCOINGUI_H
+#endif // MEMORYCOINGUI_H
