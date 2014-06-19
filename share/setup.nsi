@@ -5,8 +5,8 @@ SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.8.5
-!define COMPANY "Memorycoin project"
+!define VERSION 3.0.0
+!define COMPANY "Memorycoin Dev Team"
 !define URL http://www.memorycoin.org/
 
 # MUI Symbol Definitions
