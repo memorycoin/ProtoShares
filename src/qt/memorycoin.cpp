@@ -1,10 +1,15 @@
 /*
  * W.J. van der Laan 2011-2012
+ * Copyright (c) 2010 Satoshi Nakamoto
+ * Copyright (c) 2009-2012 The Memorycoin developers
+ * Distributed under the MIT/X11 software license, see the accompanying
+ * file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ * Copyright (c) 2013-2014 Memorycoin Dev Team
  */
 
 #include <QApplication>
 
-#include "bitcoingui.h"
+#include "memorycoingui.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "optionsmodel.h"
@@ -27,8 +32,8 @@
 #include "macdockiconhandler.h"
 #endif
 
-#if defined(BITCOIN_NEED_QT_PLUGINS) && !defined(_BITCOIN_QT_PLUGINS_INCLUDED)
-#define _BITCOIN_QT_PLUGINS_INCLUDED
+#if defined(MEMORYCOIN_NEED_QT_PLUGINS) && !defined(_MEMORYCOIN_QT_PLUGINS_INCLUDED)
+#define _MEMORYCOIN_QT_PLUGINS_INCLUDED
 #define __INSURE__
 #include <QtPlugin>
 Q_IMPORT_PLUGIN(qcncodecs)
@@ -42,7 +47,7 @@ Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 Q_DECLARE_METATYPE(bool*)
 
 // Need a global reference for the notifications to find the GUI
-static BitcoinGUI *guiref;
+static MemorycoinGUI *guiref;
 static SplashScreen *splashref;
 
 static bool ThreadSafeMessageBox(const std::string& message, const std::string& caption, unsigned int style)
@@ -108,11 +113,11 @@ static std::string Translate(const char* psz)
 static void handleRunawayException(std::exception *e)
 {
     PrintExceptionContinue(e, "Runaway exception");
-    QMessageBox::critical(0, "Runaway exception", BitcoinGUI::tr("A fatal error occurred. MemoryCoin can no longer continue safely and will quit.") + QString("\n\n") + QString::fromStdString(strMiscWarning));
+    QMessageBox::critical(0, "Runaway exception", MemorycoinGUI::tr("A fatal error occurred. MemoryCoin can no longer continue safely and will quit.") + QString("\n\n") + QString::fromStdString(strMiscWarning));
     exit(1);
 }
 
-#ifndef BITCOIN_QT_TEST
+#ifndef MEMORYCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
     // Command-line options take precedence:
@@ -122,7 +127,7 @@ int main(int argc, char *argv[])
    // QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
     //QTextCodec::setCodecForCStrings(QTextCodec::codecForTr());
 
-    Q_INIT_RESOURCE(bitcoin);
+    Q_INIT_RESOURCE(memorycoin);
     QApplication app(argc, argv);
 
     // Register meta types used for QMetaObject::invokeMethod
@@ -137,11 +142,11 @@ int main(int argc, char *argv[])
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
 
-    // ... then bitcoin.conf:
+    // ... then memorycoin.conf:
     if (!boost::filesystem::is_directory(GetDataDir(false)))
     {
         // This message can not be translated, as translation is not initialized yet
-        // (which not yet possible because lang=XX can be overridden in bitcoin.conf in the data directory)
+        // (which not yet possible because lang=XX can be overridden in memorycoin.conf in the data directory)
         QMessageBox::critical(0, "MemoryCoin",
                               QString("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(mapArgs["-datadir"])));
         return 1;
@@ -179,11 +184,11 @@ int main(int argc, char *argv[])
     if (qtTranslator.load("qt_" + lang_territory, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(&qtTranslator);
 
-    // Load e.g. bitcoin_de.qm (shortcut "de" needs to be defined in bitcoin.qrc)
+    // Load e.g. memorycoin_de.qm (shortcut "de" needs to be defined in memorycoin.qrc)
     if (translatorBase.load(lang, ":/translations/"))
         app.installTranslator(&translatorBase);
 
-    // Load e.g. bitcoin_de_DE.qm (shortcut "de_DE" needs to be defined in bitcoin.qrc)
+    // Load e.g. memorycoin_de_DE.qm (shortcut "de_DE" needs to be defined in memorycoin.qrc)
     if (translator.load(lang_territory, ":/translations/"))
         app.installTranslator(&translator);
 
@@ -205,7 +210,7 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_MAC
     // on mac, also change the icon now because it would look strange to have a testnet splash (green) and a std app icon (orange)
     if(GetBoolArg("-testnet")) {
-        MacDockIconHandler::instance()->setIcon(QIcon(":icons/bitcoin_testnet"));
+        MacDockIconHandler::instance()->setIcon(QIcon(":icons/memorycoin_testnet"));
     }
 #endif
 
@@ -228,7 +233,7 @@ int main(int argc, char *argv[])
 
         boost::thread_group threadGroup;
 
-        BitcoinGUI window;
+        MemorycoinGUI window;
         guiref = &window;
 
         QTimer* pollShutdownTimer = new QTimer(guiref);
@@ -264,7 +269,7 @@ int main(int argc, char *argv[])
                 }
 
                 // Now that initialization/startup is done, process any command-line
-                // bitcoin: URIs
+                // memorycoin: URIs
                 QObject::connect(paymentServer, SIGNAL(receivedURI(QString)), &window, SLOT(handleURI(QString)));
                 QTimer::singleShot(100, paymentServer, SLOT(uiReady()));
 
@@ -275,7 +280,7 @@ int main(int argc, char *argv[])
                 window.removeAllWallets();
                 guiref = 0;
             }
-            // Shutdown the core and its threads, but don't exit Bitcoin-Qt here
+            // Shutdown the core and its threads, but don't exit Memorycoin-Qt here
             threadGroup.interrupt_all();
             threadGroup.join_all();
             Shutdown();
@@ -294,4 +299,4 @@ int main(int argc, char *argv[])
     }
     return 0;
 }
-#endif // BITCOIN_QT_TEST
+#endif // MEMORYCOIN_QT_TEST
