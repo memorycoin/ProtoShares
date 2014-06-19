@@ -1,4 +1,29 @@
-/*
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
+#include "macdockiconhandler.h"
+
+#include <QMenu>
+#include <QWidget>
+#include <QTemporaryFile>
+#include <QImageWriter>
+
+#undef slots
+#include <Cocoa/Cocoa.h>
+
+#if QT_VERSION < 0x050000
+extern void qt_mac_set_dock_menu(QMenu *);
+#endif
+
+@interface DockIconClickEventHandler : NSObject
+{
+    MacDockIconHandler* dockIconHandler;
+}
+
+@end/*
  * Qt4 memorycoin GUI.
  *
  * W.J. van der Laan 2011-2012
@@ -87,7 +112,7 @@ MemorycoinGUI::MemorycoinGUI(QWidget *parent) :
     prevBlocks(0)
 {
     restoreWindowGeometry();
-    setWindowTitle(tr("MemoryCoin") + " - " + tr("Wallet"));
+    setWindowTitle(tr("Memorycoin") + " - " + tr("Wallet"));
 #ifndef Q_OS_MAC
     QApplication::setWindowIcon(QIcon(":icons/memorycoin"));
     setWindowIcon(QIcon(":icons/memorycoin"));
@@ -192,7 +217,7 @@ void MemorycoinGUI::createActions()
     tabGroup->addAction(overviewAction);
 
     sendCoinsAction = new QAction(QIcon(":/icons/send"), tr("&Send"), this);
-    sendCoinsAction->setStatusTip(tr("Send coins to a MemoryCoin address"));
+    sendCoinsAction->setStatusTip(tr("Send coins to a Memorycoin address"));
     sendCoinsAction->setToolTip(sendCoinsAction->statusTip());
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
@@ -220,7 +245,7 @@ void MemorycoinGUI::createActions()
     tabGroup->addAction(addressBookAction);
 
     voteCoinsAction = new QAction(QIcon(":/icons/voting_prefs"), tr("&Vote"), this);
-    voteCoinsAction->setStatusTip(tr("Vote in MemoryCoin elections"));
+    voteCoinsAction->setStatusTip(tr("Vote in Memorycoin elections"));
     voteCoinsAction->setToolTip(voteCoinsAction->statusTip());
     voteCoinsAction->setCheckable(true);
     voteCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
@@ -244,14 +269,14 @@ void MemorycoinGUI::createActions()
     quitAction->setStatusTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/memorycoin"), tr("&About MemoryCoin"), this);
-    aboutAction->setStatusTip(tr("Show information about MemoryCoin"));
+    aboutAction = new QAction(QIcon(":/icons/memorycoin"), tr("&About Memorycoin"), this);
+    aboutAction->setStatusTip(tr("Show information about Memorycoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
-    optionsAction->setStatusTip(tr("Modify configuration options for MemoryCoin"));
+    optionsAction->setStatusTip(tr("Modify configuration options for Memorycoin"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
     toggleHideAction = new QAction(QIcon(":/icons/memorycoin"), tr("&Show / Hide"), this);
     toggleHideAction->setStatusTip(tr("Show or hide the main Window"));
@@ -267,17 +292,17 @@ void MemorycoinGUI::createActions()
     miningOffAction = new QAction(QIcon(":/icons/mining_inactive"), tr("Solo Mining Off"), this);
     miningOffAction->setStatusTip(tr("Stop Mining. May take some time to wind down."));
     miningOneAction = new QAction(QIcon(":/icons/mining_active"), tr("Solo Mining On (1GB Required)"), this);
-    miningOneAction->setStatusTip(tr("Mine MemoryCoin solo - not recommended!"));
+    miningOneAction->setStatusTip(tr("Mine Memorycoin solo - not recommended!"));
     miningTwoAction = new QAction(QIcon(":/icons/mining"), tr("Mine 2 Processes (1GB Required)"), this);
-    miningTwoAction->setStatusTip(tr("Mine MemoryCoin with 2 processes. 1GB Required."));
+    miningTwoAction->setStatusTip(tr("Mine Memorycoin with 2 processes. 1GB Required."));
     miningThreeAction = new QAction(QIcon(":/icons/mining"), tr("Mine 4 Processes (1GB Required)"), this);
-    miningThreeAction->setStatusTip(tr("Mine MemoryCoin with 4 processes. 1GB Required."));
+    miningThreeAction->setStatusTip(tr("Mine Memorycoin with 4 processes. 1GB Required."));
     miningFourAction = new QAction(QIcon(":/icons/mining"), tr("Mine 8 Processes (1GB Required)"), this);
-    miningFourAction->setStatusTip(tr("Mine MemoryCoin with 8 processes. 1GB Required."));
+    miningFourAction->setStatusTip(tr("Mine Memorycoin with 8 processes. 1GB Required."));
     miningFiveAction = new QAction(QIcon(":/icons/mining"), tr("Mine 16 Processes (1GB Required)"), this);
-    miningFiveAction->setStatusTip(tr("Mine MemoryCoin with 16 processes. 1GB Required."));
+    miningFiveAction->setStatusTip(tr("Mine Memorycoin with 16 processes. 1GB Required."));
     miningSixAction = new QAction(QIcon(":/icons/mining"), tr("Mine 32 Processes (1GB Required)"), this);
-    miningSixAction->setStatusTip(tr("Mine MemoryCoin with 32 processes. 1GB Required."));
+    miningSixAction->setStatusTip(tr("Mine Memorycoin with 32 processes. 1GB Required."));
     miningPoolAESONAction = new QAction(QIcon(":/icons/mining_active"), tr("Launch Pool Miner"), this);
     miningPoolAESONAction->setStatusTip(tr("Launch Pool Miner ((64 bit / 1GB required))"));
     miningPoolAESOFFAction = new QAction(QIcon(":/icons/mining_active"), tr("Launch Pool Miner"), this);
@@ -301,9 +326,9 @@ void MemorycoinGUI::createActions()
    
     
     signMessageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
-    signMessageAction->setStatusTip(tr("Sign messages with your MemoryCoin addresses to prove you own them"));
+    signMessageAction->setStatusTip(tr("Sign messages with your Memorycoin addresses to prove you own them"));
     verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
-    verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified MemoryCoin addresses"));
+    verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified Memorycoin addresses"));
 
     openRPCConsoleAction = new QAction(QIcon(":/icons/debugwindow"), tr("&Debug window"), this);
     openRPCConsoleAction->setStatusTip(tr("Open debugging and diagnostic console"));
@@ -492,7 +517,7 @@ void MemorycoinGUI::createTrayIcon()
 #ifndef Q_OS_MAC
     trayIcon = new QSystemTrayIcon(this);
 
-    trayIcon->setToolTip(tr("MemoryCoin client"));
+    trayIcon->setToolTip(tr("Memorycoin client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
     trayIcon->show();
 #endif
@@ -640,9 +665,9 @@ void MemorycoinGUI::setNumConnections(int count)
     }
     labelConnectionsIcon->setPixmap(QIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
     if(count<5){
-	labelConnectionsIcon->setToolTip(tr("%n active connection(s) to MemoryCoin network. Open port 1968 for more connections.", "", count));
+	labelConnectionsIcon->setToolTip(tr("%n active connection(s) to Memorycoin network. Open port 1968 for more connections.", "", count));
     }else{
-	labelConnectionsIcon->setToolTip(tr("%n active connection(s) to MemoryCoin network.", "", count));
+	labelConnectionsIcon->setToolTip(tr("%n active connection(s) to Memorycoin network.", "", count));
     }
 }
 
@@ -754,13 +779,13 @@ void MemorycoinGUI::setMining(double hashrate, int threads)
     else
     {
         labelMiningIcon->setPixmap(QIcon(":/icons/mining_inactive").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-        labelMiningIcon->setToolTip(tr("Not mining MemoryCoin"));
+        labelMiningIcon->setToolTip(tr("Not mining Memorycoin"));
     }
 }
 
 void MemorycoinGUI::message(const QString &title, const QString &message, unsigned int style, bool *ret)
 {
-    QString strTitle = tr("MemoryCoin"); // default title
+    QString strTitle = tr("Memorycoin"); // default title
     // Default to information icon
     int nMBoxIcon = QMessageBox::Information;
     int nNotifyIcon = Notificator::Information;
@@ -891,7 +916,7 @@ void MemorycoinGUI::dropEvent(QDropEvent *event)
         if (nValidUrisFound)
             walletFrame->gotoSendCoinsPage();
         else
-            message(tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid MemoryCoin address or malformed URI parameters."),
+            message(tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid Memorycoin address or malformed URI parameters."),
                       CClientUIInterface::ICON_WARNING);
     }
 
@@ -914,7 +939,7 @@ void MemorycoinGUI::handleURI(QString strURI)
 {
     // URI has to be valid
     if (!walletFrame->handleURI(strURI))
-        message(tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid MemoryCoin address or malformed URI parameters."),
+        message(tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid Memorycoin address or malformed URI parameters."),
                   CClientUIInterface::ICON_WARNING);
 }
 
