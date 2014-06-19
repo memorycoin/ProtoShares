@@ -1,20 +1,26 @@
-#ifndef BITCOINUNITS_H
-#define BITCOINUNITS_H
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Memorycoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
+#ifndef memorycoinUNITS_H
+#define memorycoinUNITS_H
 
 #include <QString>
 #include <QAbstractListModel>
 
-/** Bitcoin unit definitions. Encapsulates parsing and formatting
+/** Memorycoin unit definitions. Encapsulates parsing and formatting
    and serves as list model for drop-down selection boxes.
 */
-class BitcoinUnits: public QAbstractListModel
+class MemorycoinUnits: public QAbstractListModel
 {
     Q_OBJECT
 
 public:
-    explicit BitcoinUnits(QObject *parent);
+    explicit MemorycoinUnits(QObject *parent);
 
-    /** Bitcoin units.
+    /** Memorycoin units.
       @note Source: https://en.bitcoin.it/wiki/Units . Please add only sensible ones
      */
     enum Unit
@@ -62,8 +68,8 @@ public:
     ///@}
 
 private:
-    QList<BitcoinUnits::Unit> unitlist;
+    QList<MemorycoinUnits::Unit> unitlist;
 };
-typedef BitcoinUnits::Unit BitcoinUnit;
+typedef MemorycoinUnits::Unit MemorycoinUnit;
 
-#endif // BITCOINUNITS_H
+#endif // memorycoinUNITS_H
