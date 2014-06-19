@@ -1,8 +1,8 @@
 /*
- * Qt4 bitcoin GUI.
+ * Qt4 memorycoin GUI.
  *
  * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2012
+ * The Memorycoin Developers 2011-2012
  */
 
 #include <QApplication>
@@ -10,7 +10,7 @@
 #include <QDesktopServices>
 #include <QtGlobal>
 
-#include "bitcoingui.h"
+#include "memorycoingui.h"
 
 #include "transactiontablemodel.h"
 #include "optionsdialog.h"
@@ -20,7 +20,7 @@
 #include "walletframe.h"
 #include "optionsmodel.h"
 #include "transactiondescdialog.h"
-#include "bitcoinunits.h"
+#include "memorycoinunits.h"
 #include "guiconstants.h"
 #include "notificator.h"
 #include "guiutil.h"
@@ -28,7 +28,7 @@
 #include "ui_interface.h"
 #include "wallet.h"
 #include "init.h"
-#include "bitcoinrpc.h"
+#include "memorycoinrpc.h"
 
 #ifdef Q_OS_MAC
 #include "macdockiconhandler.h"
@@ -57,9 +57,9 @@
 
 #include <iostream>
 
-const QString BitcoinGUI::DEFAULT_WALLET = "~Default";
+const QString MemorycoinGUI::DEFAULT_WALLET = "~Default";
 
-BitcoinGUI::BitcoinGUI(QWidget *parent) :
+MemorycoinGUI::MemorycoinGUI(QWidget *parent) :
     QMainWindow(parent),
     clientModel(0),
     encryptWalletAction(0),
@@ -89,8 +89,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent) :
     restoreWindowGeometry();
     setWindowTitle(tr("MemoryCoin") + " - " + tr("Wallet"));
 #ifndef Q_OS_MAC
-    QApplication::setWindowIcon(QIcon(":icons/bitcoin"));
-    setWindowIcon(QIcon(":icons/bitcoin"));
+    QApplication::setWindowIcon(QIcon(":icons/memorycoin"));
+    setWindowIcon(QIcon(":icons/memorycoin"));
 #else
     setUnifiedTitleAndToolBarOnMac(true);
     QApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
@@ -169,7 +169,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent) :
     this->installEventFilter(this);
 }
 
-BitcoinGUI::~BitcoinGUI()
+MemorycoinGUI::~MemorycoinGUI()
 {
     saveWindowGeometry();
     if(trayIcon) // Hide tray icon, as deleting will let it linger until quit (on Ubuntu)
@@ -180,7 +180,7 @@ BitcoinGUI::~BitcoinGUI()
 #endif
 }
 
-void BitcoinGUI::createActions()
+void MemorycoinGUI::createActions()
 {
     QActionGroup *tabGroup = new QActionGroup(this);
 
@@ -244,7 +244,7 @@ void BitcoinGUI::createActions()
     quitAction->setStatusTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About MemoryCoin"), this);
+    aboutAction = new QAction(QIcon(":/icons/memorycoin"), tr("&About MemoryCoin"), this);
     aboutAction->setStatusTip(tr("Show information about MemoryCoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
@@ -253,7 +253,7 @@ void BitcoinGUI::createActions()
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setStatusTip(tr("Modify configuration options for MemoryCoin"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/bitcoin"), tr("&Show / Hide"), this);
+    toggleHideAction = new QAction(QIcon(":/icons/memorycoin"), tr("&Show / Hide"), this);
     toggleHideAction->setStatusTip(tr("Show or hide the main Window"));
 
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
@@ -341,7 +341,7 @@ void BitcoinGUI::createActions()
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
 }
 
-void BitcoinGUI::createMenuBar()
+void MemorycoinGUI::createMenuBar()
 {
 #ifdef Q_OS_MAC
     // Create a decoupled menu bar on Mac which stays even if the window is closed
@@ -412,7 +412,7 @@ void BitcoinGUI::createMenuBar()
     help->addAction(aboutQtAction);
 }
 
-void BitcoinGUI::createToolBars()
+void MemorycoinGUI::createToolBars()
 {
     QToolBar *toolbar = addToolBar(tr("Tabs toolbar"));
     toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -424,7 +424,7 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(voteCoinsAction);
 }
 
-void BitcoinGUI::setClientModel(ClientModel *clientModel)
+void MemorycoinGUI::setClientModel(ClientModel *clientModel)
 {
     this->clientModel = clientModel;
     if(clientModel)
@@ -434,10 +434,10 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
         {
             setWindowTitle(windowTitle() + QString(" ") + tr("[testnet]"));
 #ifndef Q_OS_MAC
-            QApplication::setWindowIcon(QIcon(":icons/bitcoin_testnet"));
-            setWindowIcon(QIcon(":icons/bitcoin_testnet"));
+            QApplication::setWindowIcon(QIcon(":icons/memorycoin_testnet"));
+            setWindowIcon(QIcon(":icons/memorycoin_testnet"));
 #else
-            MacDockIconHandler::instance()->setIcon(QIcon(":icons/bitcoin_testnet"));
+            MacDockIconHandler::instance()->setIcon(QIcon(":icons/memorycoin_testnet"));
 #endif
             if(trayIcon)
             {
@@ -472,22 +472,22 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
     }
 }
 
-bool BitcoinGUI::addWallet(const QString& name, WalletModel *walletModel)
+bool MemorycoinGUI::addWallet(const QString& name, WalletModel *walletModel)
 {
     return walletFrame->addWallet(name, walletModel);
 }
 
-bool BitcoinGUI::setCurrentWallet(const QString& name)
+bool MemorycoinGUI::setCurrentWallet(const QString& name)
 {
     return walletFrame->setCurrentWallet(name);
 }
 
-void BitcoinGUI::removeAllWallets()
+void MemorycoinGUI::removeAllWallets()
 {
     walletFrame->removeAllWallets();
 }
 
-void BitcoinGUI::createTrayIcon()
+void MemorycoinGUI::createTrayIcon()
 {
 #ifndef Q_OS_MAC
     trayIcon = new QSystemTrayIcon(this);
@@ -500,7 +500,7 @@ void BitcoinGUI::createTrayIcon()
     notificator = new Notificator(QApplication::applicationName(), trayIcon);
 }
 
-void BitcoinGUI::createTrayIconMenu()
+void MemorycoinGUI::createTrayIconMenu()
 {
     QMenu *trayIconMenu;
 #ifndef Q_OS_MAC
@@ -539,7 +539,7 @@ void BitcoinGUI::createTrayIconMenu()
 }
 
 #ifndef Q_OS_MAC
-void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
+void MemorycoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if(reason == QSystemTrayIcon::Trigger)
     {
@@ -549,14 +549,14 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 }
 #endif
 
-void BitcoinGUI::saveWindowGeometry()
+void MemorycoinGUI::saveWindowGeometry()
 {
     QSettings settings;
     settings.setValue("nWindowPos", pos());
     settings.setValue("nWindowSize", size());
 }
 
-void BitcoinGUI::restoreWindowGeometry()
+void MemorycoinGUI::restoreWindowGeometry()
 {
     QSettings settings;
     QPoint pos = settings.value("nWindowPos").toPoint();
@@ -571,7 +571,7 @@ void BitcoinGUI::restoreWindowGeometry()
     move(pos);
 }
 
-void BitcoinGUI::optionsClicked()
+void MemorycoinGUI::optionsClicked()
 {
     if(!clientModel || !clientModel->getOptionsModel())
         return;
@@ -580,54 +580,54 @@ void BitcoinGUI::optionsClicked()
     dlg.exec();
 }
 
-void BitcoinGUI::aboutClicked()
+void MemorycoinGUI::aboutClicked()
 {
     AboutDialog dlg;
     dlg.setModel(clientModel);
     dlg.exec();
 }
 
-void BitcoinGUI::gotoOverviewPage()
+void MemorycoinGUI::gotoOverviewPage()
 {
     if (walletFrame) walletFrame->gotoOverviewPage();
 }
 
-void BitcoinGUI::gotoHistoryPage()
+void MemorycoinGUI::gotoHistoryPage()
 {
     if (walletFrame) walletFrame->gotoHistoryPage();
 }
 
-void BitcoinGUI::gotoAddressBookPage()
+void MemorycoinGUI::gotoAddressBookPage()
 {
     if (walletFrame) walletFrame->gotoAddressBookPage();
 }
 
-void BitcoinGUI::gotoReceiveCoinsPage()
+void MemorycoinGUI::gotoReceiveCoinsPage()
 {
     if (walletFrame) walletFrame->gotoReceiveCoinsPage();
 }
 
-void BitcoinGUI::gotoSendCoinsPage(QString addr)
+void MemorycoinGUI::gotoSendCoinsPage(QString addr)
 {
     if (walletFrame) walletFrame->gotoSendCoinsPage(addr);
 }
 
-void BitcoinGUI::gotoVoteCoinsPage(QString addr)
+void MemorycoinGUI::gotoVoteCoinsPage(QString addr)
 {
     if (walletFrame) walletFrame->gotoVoteCoinsPage(addr);
 }
 
-void BitcoinGUI::gotoSignMessageTab(QString addr)
+void MemorycoinGUI::gotoSignMessageTab(QString addr)
 {
     if (walletFrame) walletFrame->gotoSignMessageTab(addr);
 }
 
-void BitcoinGUI::gotoVerifyMessageTab(QString addr)
+void MemorycoinGUI::gotoVerifyMessageTab(QString addr)
 {
     if (walletFrame) walletFrame->gotoVerifyMessageTab(addr);
 }
 
-void BitcoinGUI::setNumConnections(int count)
+void MemorycoinGUI::setNumConnections(int count)
 {
     QString icon;
     switch(count)
@@ -646,7 +646,7 @@ void BitcoinGUI::setNumConnections(int count)
     }
 }
 
-void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
+void MemorycoinGUI::setNumBlocks(int count, int nTotalBlocks)
 {
     // Prevent orphan statusbar messages (e.g. hover Quit in main menu, wait until chain-sync starts -> garbelled text)
     statusBar()->clearMessage();
@@ -740,7 +740,7 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     progressBar->setToolTip(tooltip);
 }
 
-void BitcoinGUI::setMining(double hashrate, int threads)
+void MemorycoinGUI::setMining(double hashrate, int threads)
 {
     if (threads>0)
     {
@@ -758,7 +758,7 @@ void BitcoinGUI::setMining(double hashrate, int threads)
     }
 }
 
-void BitcoinGUI::message(const QString &title, const QString &message, unsigned int style, bool *ret)
+void MemorycoinGUI::message(const QString &title, const QString &message, unsigned int style, bool *ret)
 {
     QString strTitle = tr("MemoryCoin"); // default title
     // Default to information icon
@@ -809,7 +809,7 @@ void BitcoinGUI::message(const QString &title, const QString &message, unsigned 
         notificator->notify((Notificator::Class)nNotifyIcon, strTitle, message);
 }
 
-void BitcoinGUI::changeEvent(QEvent *e)
+void MemorycoinGUI::changeEvent(QEvent *e)
 {
     QMainWindow::changeEvent(e);
 #ifndef Q_OS_MAC // Ignored on Mac
@@ -828,7 +828,7 @@ void BitcoinGUI::changeEvent(QEvent *e)
 #endif
 }
 
-void BitcoinGUI::closeEvent(QCloseEvent *event)
+void MemorycoinGUI::closeEvent(QCloseEvent *event)
 {
     if(clientModel)
     {
@@ -843,18 +843,18 @@ void BitcoinGUI::closeEvent(QCloseEvent *event)
     QMainWindow::closeEvent(event);
 }
 
-void BitcoinGUI::askFee(qint64 nFeeRequired, bool *payFee)
+void MemorycoinGUI::askFee(qint64 nFeeRequired, bool *payFee)
 {
     QString strMessage = tr("The transaction fee will be %1, "
         "which goes to the nodes that process your transaction and helps to support the network. "
-        "Do you still want to process the transaction?").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, nFeeRequired));
+        "Do you still want to process the transaction?").arg(MemorycoinUnits::formatWithUnit(MemorycoinUnits::BTC, nFeeRequired));
     QMessageBox::StandardButton retval = QMessageBox::question(
           this, tr("Confirm transaction fee"), strMessage,
           QMessageBox::Yes|QMessageBox::Cancel, QMessageBox::Yes);
     *payFee = (retval == QMessageBox::Yes);
 }
 
-void BitcoinGUI::incomingTransaction(const QString& date, int unit, qint64 amount, const QString& type, const QString& address)
+void MemorycoinGUI::incomingTransaction(const QString& date, int unit, qint64 amount, const QString& type, const QString& address)
 {
     // On new transaction, make an info balloon
     message((amount)<0 ? tr("Sent transaction") : tr("Incoming transaction"),
@@ -863,19 +863,19 @@ void BitcoinGUI::incomingTransaction(const QString& date, int unit, qint64 amoun
                 "Type: %3\n"
                 "Address: %4\n")
                   .arg(date)
-                  .arg(BitcoinUnits::formatWithUnit(unit, amount, true))
+                  .arg(MemorycoinUnits::formatWithUnit(unit, amount, true))
                   .arg(type)
                   .arg(address), CClientUIInterface::MSG_INFORMATION);
 }
 
-void BitcoinGUI::dragEnterEvent(QDragEnterEvent *event)
+void MemorycoinGUI::dragEnterEvent(QDragEnterEvent *event)
 {
     // Accept only URIs
     if(event->mimeData()->hasUrls())
         event->acceptProposedAction();
 }
 
-void BitcoinGUI::dropEvent(QDropEvent *event)
+void MemorycoinGUI::dropEvent(QDropEvent *event)
 {
     if(event->mimeData()->hasUrls())
     {
@@ -898,7 +898,7 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
     event->acceptProposedAction();
 }
 
-bool BitcoinGUI::eventFilter(QObject *object, QEvent *event)
+bool MemorycoinGUI::eventFilter(QObject *object, QEvent *event)
 {
     // Catch status tip events
     if (event->type() == QEvent::StatusTip)
@@ -910,7 +910,7 @@ bool BitcoinGUI::eventFilter(QObject *object, QEvent *event)
     return QMainWindow::eventFilter(object, event);
 }
 
-void BitcoinGUI::handleURI(QString strURI)
+void MemorycoinGUI::handleURI(QString strURI)
 {
     // URI has to be valid
     if (!walletFrame->handleURI(strURI))
@@ -918,7 +918,7 @@ void BitcoinGUI::handleURI(QString strURI)
                   CClientUIInterface::ICON_WARNING);
 }
 
-void BitcoinGUI::setEncryptionStatus(int status)
+void MemorycoinGUI::setEncryptionStatus(int status)
 {
     switch(status)
     {
@@ -947,7 +947,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
     }
 }
 
-void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
+void MemorycoinGUI::showNormalIfMinimized(bool fToggleHidden)
 {
     // activateWindow() (sometimes) helps with keyboard focus on Windows
     if (isHidden())
@@ -969,42 +969,42 @@ void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
         hide();
 }
 
-void BitcoinGUI::toggleHidden()
+void MemorycoinGUI::toggleHidden()
 {
     showNormalIfMinimized(true);
 }
 
-void BitcoinGUI::detectShutdown()
+void MemorycoinGUI::detectShutdown()
 {
     if (ShutdownRequested())
         QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 }
 
-void BitcoinGUI::miningOff()
+void MemorycoinGUI::miningOff()
 {
 mapArgs["-genproclimit"] = "0";
-GenerateBitcoins(false, pwalletMain);
+GenerateMemorycoins(false, pwalletMain);
 }
 
-void BitcoinGUI::miningOn(int processes)
+void MemorycoinGUI::miningOn(int processes)
 {
 mapArgs["-genproclimit"] = itostr(processes);
-GenerateBitcoins(processes!=0?true:false, pwalletMain);
+GenerateMemorycoins(processes!=0?true:false, pwalletMain);
 }
 
-void BitcoinGUI::miningOne(){miningOn(-1);}
-void BitcoinGUI::miningTwo(){miningOn(2);}
-void BitcoinGUI::miningThree(){miningOn(4);}
-void BitcoinGUI::miningFour(){miningOn(8);}
-void BitcoinGUI::miningFive(){miningOn(16);}
-void BitcoinGUI::miningSix(){miningOn(32);}
+void MemorycoinGUI::miningOne(){miningOn(-1);}
+void MemorycoinGUI::miningTwo(){miningOn(2);}
+void MemorycoinGUI::miningThree(){miningOn(4);}
+void MemorycoinGUI::miningFour(){miningOn(8);}
+void MemorycoinGUI::miningFive(){miningOn(16);}
+void MemorycoinGUI::miningSix(){miningOn(32);}
 
-void BitcoinGUI::miningPoolAESON(){
+void MemorycoinGUI::miningPoolAESON(){
 	miningOff();
     LaunchPoolMiner();
 }
 
-void BitcoinGUI::miningPoolAESOFF(){
+void MemorycoinGUI::miningPoolAESOFF(){
     miningOff();
     LaunchPoolMiner();
 }
@@ -1013,30 +1013,30 @@ void openWebsite(string url){
     QDesktopServices::openUrl(QUrl(QString::fromStdString(url), QUrl::TolerantMode));
 }
 
-void BitcoinGUI::currentVotes(){
+void MemorycoinGUI::currentVotes(){
 	openWebsite("http://mmcvotes.com/address/"+getDefaultWalletAddress());
 }
 
-void BitcoinGUI::howToVote(){
+void MemorycoinGUI::howToVote(){
 	openWebsite("http://memorycoin.org/how-to-vote/");
 }
 
-void BitcoinGUI::currentCandidates(){
+void MemorycoinGUI::currentCandidates(){
 	openWebsite("http://memorycoin.org/candidates/");
 }
 
-void BitcoinGUI::currentResults(){
+void MemorycoinGUI::currentResults(){
 	openWebsite("http://mmcvotes.com/");
 }
 
-void BitcoinGUI::balanceMMC(){
+void MemorycoinGUI::balanceMMC(){
     openWebsite("http://mmcpool.com/en/user?wallet="+getDefaultWalletAddress());
 }
 
-void BitcoinGUI::balanceDwarf(){
+void MemorycoinGUI::balanceDwarf(){
     openWebsite("http://dwarfpool.com/mmc/address?wallet="+getDefaultWalletAddress());
 }
 
-void BitcoinGUI::balance1GH(){
+void MemorycoinGUI::balance1GH(){
     openWebsite("http://mmc.1gh.com/user?wallet="+getDefaultWalletAddress());
 }
