@@ -1,4 +1,9 @@
-#ifndef WALLETMODEL_H
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #define WALLETMODEL_H
 
 #include <QObject>
@@ -31,7 +36,7 @@ public:
 };
 
 
-/** Interface to Bitcoin wallet from Qt view code. */
+/** Interface to Memorycoin wallet from Qt view code. */
 class WalletModel : public QObject
 {
     Q_OBJECT
