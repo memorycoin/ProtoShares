@@ -2,7 +2,7 @@
 #include "ui_votecoinsdialog.h"
 
 #include "walletmodel.h"
-#include "bitcoinunits.h"
+#include "memorycoinunits.h"
 #include "addressbookpage.h"
 #include "optionsmodel.h"
 #include "votecoinsentry.h"
@@ -125,9 +125,9 @@ void VoteCoinsDialog::sendToRecipients(bool sweep, qint64 sweepFee){
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
      #if QT_VERSION >= 0x050000
-        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), rcp.label.toHtmlEscaped(), rcp.address));
+        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(MemorycoinUnits::formatWithUnit(MemorycoinUnits::BTC, rcp.amount), rcp.label.toHtmlEscaped(), rcp.address));
      #else
-        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), Qt::escape(rcp.label), rcp.address));
+        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(MemorycoinUnits::formatWithUnit(MemorycoinUnits::BTC, rcp.amount), Qt::escape(rcp.label), rcp.address));
      #endif
     }
 
@@ -178,7 +178,7 @@ void VoteCoinsDialog::sendToRecipients(bool sweep, qint64 sweepFee){
         }
         QMessageBox::warning(this, tr("Send Coins"),
             tr("The total exceeds your balance when the %1 transaction fee is included.").
-            arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, sendstatus.fee)),
+            arg(MemorycoinUnits::formatWithUnit(MemorycoinUnits::BTC, sendstatus.fee)),
             QMessageBox::Ok, QMessageBox::Ok);
         break;
     case WalletModel::DuplicateAddress:
@@ -343,9 +343,9 @@ void VoteCoinsDialog::pasteEntry(const SendCoinsRecipient &rv)
 {
     SendCoinsRecipient rv;
     // URI has to be valid
-    if (GUIUtil::parseBitcoinURI(uri, &rv))
+    if (GUIUtil::parseMemorycoinURI(uri, &rv))
     {
-        CBitcoinAddress address(rv.address.toStdString());
+        CMemorycoinAddress address(rv.address.toStdString());
         if (!address.IsValid())
             return false;
         pasteEntry(rv);
@@ -363,7 +363,7 @@ void VoteCoinsDialog::pasteEntry(const SendCoinsRecipient &rv)
         return;
 
     int unit = model->getOptionsModel()->getDisplayUnit();
-    ui->labelBalance->setText(BitcoinUnits::formatWithUnit(unit, balance));
+    ui->labelBalance->setText(MemorycoinUnits::formatWithUnit(unit, balance));
 }
 
 void VoteCoinsDialog::updateDisplayUnit()
@@ -371,6 +371,6 @@ void VoteCoinsDialog::updateDisplayUnit()
     if(model && model->getOptionsModel())
     {
         // Update labelBalance with the current balance and the current unit
-        ui->labelBalance->setText(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), model->getBalance()));
+        ui->labelBalance->setText(MemorycoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), model->getBalance()));
     }
 }*/
