@@ -51,4 +51,4 @@ public:
     bool LoadBlockIndexGuts();
 };
 
-#endif // BITCOIN_TXDB_LEVELDB_H
+#endif // MEMORYCOIN_TXDB_LEVELDB_H
