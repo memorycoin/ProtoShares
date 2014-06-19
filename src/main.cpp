@@ -5360,9 +5360,10 @@ public:
 
 //Grant award once every two hours - every 20 blocks
 static const int64 GRANTBLOCKINTERVAL = (2*60*60)/nTargetSpacing;
+static const int64 GRANTBLOCKINTERVALNEW = 180; // 1 day
+static string GRANTPREFIX ="MVTE";
+static string GRANTPREFIXNEW = "MMC";
 
-
-static string GRANTPREFIX ="MMC";
 static int numberOfOffices = 6;
 string electedOffices[7];
 //= {"ceo","cto","cno","cmo","cso","cha","XFT"};
@@ -5409,7 +5410,7 @@ int64 getNUMBEROFAWARDS(int64 blockNumber){
 }
 
 bool isGrantAwardBlock(int64 nHeight){
-	if(nHeight%GRANTBLOCKINTERVAL ==0 && nHeight!=0 && nHeight!=GRANTBLOCKINTERVAL){
+	if(nHeight % (nHeight > V3FORKHEIGHT ? GRANTBLOCKINTERVALNEW : GRANTBLOCKINTERVAL) == 0 && nHeight != 0 && nHeight != GRANTBLOCKINTERVAL){
 		return true;
 	}
 	return false;	
@@ -5584,13 +5585,13 @@ int64 getGrantDatabaseBlockHeight(){
 }
 
 
-int getOfficeNumberFromAddress(string grantVoteAddress){
-	if (!startsWith(grantVoteAddress.c_str(),GRANTPREFIX.c_str())){
+int getOfficeNumberFromAddress(string grantVoteAddress, int64 nHeight){
+	if (!startsWith(grantVoteAddress.c_str(),(nHeight > V3FORKHEIGHT ? GRANTPREFIXNEW : GRANTPREFIX).c_str())){
 		return -1;
 	}
     for(int i=0;i<numberOfOffices+1;i++){
 		//printf("substring %s\n",grantVoteAddress.substr(4,3).c_str());
-		if(grantVoteAddress.substr(4,3)==electedOffices[i]){
+		if(grantVoteAddress.substr(nHeight > V3FORKHEIGHT ? 3 : 4,3)==electedOffices[i]){
 			return i;
 		}
 	}
@@ -5660,7 +5661,7 @@ void processNextBlockIntoGrantDatabase(){
 			balances[receiveAddress]=balances[receiveAddress]+theAmount;				
 			
 			//Note any voting preferences made in the outputs
-			if(startsWith(receiveAddress.c_str(),GRANTPREFIX.c_str()) && theAmount<10 && theAmount>0){
+			if(startsWith(receiveAddress.c_str(),(gdBlockPointer->nHeight > V3FORKHEIGHT ? GRANTPREFIXNEW : GRANTPREFIX).c_str()) && theAmount<10 && theAmount>0){
 				//printf("Vote found Amount: %llu\n",theAmount);
 				//Voting output - if the same address is voted a number of times in the same transaction, only the last one is counted
 				votes[receiveAddress]=theAmount;
@@ -5687,7 +5688,7 @@ void processNextBlockIntoGrantDatabase(){
 				for(votesit=votes.begin(); votesit!=votes.end(); ++votesit){
                     printf("Vote found: %s, %llu\n",votesit->first.c_str(),votesit->second);
 					string grantVoteAddress=(votesit->first);
-					int electedOfficeNumber = getOfficeNumberFromAddress(grantVoteAddress);
+					int electedOfficeNumber = getOfficeNumberFromAddress(grantVoteAddress, gdBlockPointer->nHeight);
 					if(electedOfficeNumber>-1){
                         printf("Vote added: %d %s, %llu\n",electedOfficeNumber,votesit->first.c_str(),votesit->second);
                         votingPreferences[electedOfficeNumber][spendAddress][votesit->second] = grantVoteAddress;
