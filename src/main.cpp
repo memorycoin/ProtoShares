@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #ifdef QT_CORE_LIB
 #include <QtGlobal>
 #ifdef Q_OS_MAC // if mac
@@ -90,7 +91,7 @@ map<uint256, set<uint256> > mapOrphanTransactionsByPrev;
 // Constant stuff for coinbase transactions we create:
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "MemoryCoin Signed Message:\n";
+const string strMessageMagic = "Memorycoin Signed Message:\n";
 
 double dHashesPerSec = 0.0;
 int64 nHPSTimerStart = 0;
@@ -396,7 +397,7 @@ bool CTxOut::IsDust() const
     // (5430 satoshis) with default nMinRelayTxFee
     //return ((nValue*1000)/(3*((int)GetSerializeSize(SER_DISK,0)+148)) < CTransaction::nMinRelayTxFee);
 
-	//MemoryCoin requires small amounts of coins be sent to allow for voting
+	//Memorycoin requires small amounts of coins be sent to allow for voting
 	return false;
 }
 
@@ -1848,7 +1849,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 void ThreadScriptCheck() {
-    RenameThread("bitcoin-scriptch");
+    RenameThread("memorycoin-scriptch");
     scriptcheckqueue.Thread();
 }
 
@@ -1975,7 +1976,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 		for (unsigned int j = 0; j <vtx[0].vout.size(); j++){
 			CTxDestination address;
 			ExtractDestination(vtx[0].vout[j].scriptPubKey,address);
-			string receiveAddress=CBitcoinAddress(address).ToString().c_str();
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
 			int64 theAmount=vtx[0].vout[j].nValue;
 			//printf("Compare %llu, %llu\n",theAmount,gait->second);
 			//printf("Compare %s, %s\n",receiveAddress.c_str(),gait->first.c_str());
@@ -4370,7 +4371,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// BitcoinMiner
+// MemorycoinMiner
 //
 
 int static FormatHashBlocks(void* pbuffer, unsigned int len)
@@ -4464,7 +4465,7 @@ public:
 
 std::map<std::string,int64> getGenesisBalances(){
 	std::map<std::string,int64> genesisBalances;
-	//MemoryCoin beta / ProtoShares balances
+	//Memorycoin beta / ProtoShares balances
 	ifstream myfile ("genesisbalances.txt");
 	char * pEnd;
 	std::string line;
@@ -4504,7 +4505,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	txNew.vout.resize(genesisBalances.size()+1);
 	for(balit=genesisBalances.begin(); balit!=genesisBalances.end(); ++balit){
 		//printf("gb:%s,%llu",balit->first.c_str(),balit->second);
-		CBitcoinAddress address(balit->first);
+		CMemorycoinAddress address(balit->first);
 		txNew.vout[i].scriptPubKey.SetDestination( address.Get() );
 		txNew.vout[i].nValue = balit->second;
 		total=total+balit->second;
@@ -4528,7 +4529,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
 		printf("Add %s %llu\n",gait->first.c_str(),gait->second);
 	
-		CBitcoinAddress address(gait->first);
+		CMemorycoinAddress address(gait->first);
 		txNew.vout[i+1].scriptPubKey.SetDestination( address.Get() );
 		txNew.vout[i+1].nValue = gait->second;
 		i++;		
@@ -4854,7 +4855,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     fprintf( stderr, "hash %s < %s\n", hash.ToString().c_str(), hashTarget.ToString().c_str() );
 
     //// debug print
-    printf("MemoryCoinMiner:\n");
+    printf("MemorycoinMiner:\n");
     printf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
     pblock->print();
     printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
@@ -4863,7 +4864,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != hashBestChain)
-            return error("MemoryCoinMiner : generated block is stale");
+            return error("MemorycoinMiner : generated block is stale");
 
         // Remove key from key pool
         reservekey.KeepKey();
@@ -4877,7 +4878,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
         // Process this block the same as if we had received it from another node
         CValidationState state;
         if (!ProcessBlock(state, NULL, pblock))
-            return error("MemoryCoinMiner : ProcessBlock, block not accepted");
+            return error("MemorycoinMiner : ProcessBlock, block not accepted");
     }
 
     return true;
@@ -4885,9 +4886,9 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 
 
-void static BitcoinMiner(CWallet *pwallet, unsigned int randStartNonce)
+void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 {
-    printf("MemoryCoinMiner started\n");
+    printf("MemorycoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("memorycoin-miner");
 
@@ -4928,7 +4929,7 @@ void static BitcoinMiner(CWallet *pwallet, unsigned int randStartNonce)
         CBlock *pblock = &pblocktemplate->block;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-        printf("Running MemoryCoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        printf("Running MemorycoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
@@ -4963,7 +4964,7 @@ void static BitcoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 		for(int i=0;i<1;i++){
 			pblock->nNonce=pblock->nNonce+1;
 			if (nThreads == 0){
-				printf("MemoryCoinMiner terminated\n");
+				printf("MemorycoinMiner terminated\n");
 				delete [] scratchpad;
 				return;
 			}
@@ -5057,7 +5058,7 @@ void static BitcoinMiner(CWallet *pwallet, unsigned int randStartNonce)
     } }
     catch (boost::thread_interrupted)
     {	    
-        printf("MemoryCoinMiner terminated\n");
+        printf("MemorycoinMiner terminated\n");
 	delete [] scratchpad;
         throw;
     }
@@ -5109,7 +5110,7 @@ void LaunchPoolMiner(){
     // Yam path
     string yamPath = yamDir+"yam";
 
-    // Osx need escape white space MemoryCoin-Qt 2.app to MemoryCoin-Qt\\ 2.app
+    // Osx need escape white space Memorycoin-Qt 2.app to Memorycoin-Qt\\ 2.app
     string w = " ";
     string r = "\\\\ ";
     boost::algorithm::replace_all(yamPath, w,r);
@@ -5147,7 +5148,7 @@ void LaunchPoolMiner(){
 
 static boost::thread_group* minerThreads = NULL;
 
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
+void GenerateMemorycoins(bool fGenerate, CWallet* pwallet)
 {
 	if(fGenerate==false){
 		nThreads=0;
@@ -5164,8 +5165,8 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 		//Mining was switched off, switch on
 		srand (time(NULL));
 		minerThreads = new boost::thread_group();
-		minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, rand()));
-		//minerThreads->create_thread(boost::bind(&BitcoinPoolMiner, 8, "Mtest"));
+		minerThreads->create_thread(boost::bind(&MemorycoinMiner, pwallet, rand()));
+		//minerThreads->create_thread(boost::bind(&MemorycoinPoolMiner, 8, "Mtest"));
 		
 		//minerThreads->create_thread(boost::bind(&start, 8, "MRU4YmiS4wYZAQ8RDtxx8hPHauaa4RPyHF"));
 		//start(8, "MRU4YmiS4wYZAQ8RDtxx8hPHauaa4RPyHF");
@@ -5553,7 +5554,7 @@ void processNextBlockIntoGrantDatabase(){
 			CTxDestination address;
 			ExtractDestination(block.vtx[i].vout[j].scriptPubKey,address);
 			
-			string receiveAddress=CBitcoinAddress(address).ToString().c_str();
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
 			int64 theAmount=block.vtx[i].vout[j].nValue;
 			
 			//Update balance - if no previous balance, should start at 0
@@ -5577,7 +5578,7 @@ void processNextBlockIntoGrantDatabase(){
 				GetTransaction(block.vtx[i].vin[j].prevout.hash,txPrev,hashBlock);
 				CTxDestination source;
 				ExtractDestination(txPrev.vout[block.vtx[i].vin[j].prevout.n].scriptPubKey,source);			
-				string spendAddress=CBitcoinAddress(source).ToString().c_str();
+				string spendAddress=CMemorycoinAddress(source).ToString().c_str();
 				int64 theAmount=txPrev.vout[block.vtx[i].vin[j].prevout.n].nValue;
 				
 				//Reduce balance
