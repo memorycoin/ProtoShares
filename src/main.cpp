@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #ifdef QT_CORE_LIB
 #include <QtGlobal>
 #ifdef Q_OS_MAC // if mac
@@ -1948,7 +1949,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 void ThreadScriptCheck() {
-    RenameThread("bitcoin-scriptch");
+    RenameThread("memorycoin-scriptch");
     scriptcheckqueue.Thread();
 }
 
@@ -2075,7 +2076,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 		for (unsigned int j = 0; j <vtx[0].vout.size(); j++){
 			CTxDestination address;
 			ExtractDestination(vtx[0].vout[j].scriptPubKey,address);
-			string receiveAddress=CBitcoinAddress(address).ToString().c_str();
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
 			int64 theAmount=vtx[0].vout[j].nValue;
 			//printf("Compare %llu, %llu\n",theAmount,gait->second);
 			//printf("Compare %s, %s\n",receiveAddress.c_str(),gait->first.c_str());
@@ -4470,7 +4471,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// BitcoinMiner
+// MemorycoinMiner
 //
 
 int static FormatHashBlocks(void* pbuffer, unsigned int len)
@@ -4604,7 +4605,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	txNew.vout.resize(genesisBalances.size()+1);
 	for(balit=genesisBalances.begin(); balit!=genesisBalances.end(); ++balit){
 		//printf("gb:%s,%llu",balit->first.c_str(),balit->second);
-		CBitcoinAddress address(balit->first);
+		CMemorycoinAddress address(balit->first);
 		txNew.vout[i].scriptPubKey.SetDestination( address.Get() );
 		txNew.vout[i].nValue = balit->second;
 		total=total+balit->second;
@@ -4628,7 +4629,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
 		printf("Add %s %llu\n",gait->first.c_str(),gait->second);
 	
-		CBitcoinAddress address(gait->first);
+		CMemorycoinAddress address(gait->first);
 		txNew.vout[i+1].scriptPubKey.SetDestination( address.Get() );
 		txNew.vout[i+1].nValue = gait->second;
 		i++;		
@@ -4985,7 +4986,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 
 
-void static BitcoinMiner(CWallet *pwallet, unsigned int randStartNonce)
+void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 {
     printf("MemoryCoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
@@ -5247,7 +5248,7 @@ void LaunchPoolMiner(){
 
 static boost::thread_group* minerThreads = NULL;
 
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
+void GenerateMemorycoins(bool fGenerate, CWallet* pwallet)
 {
 	if(fGenerate==false){
 		nThreads=0;
@@ -5264,8 +5265,8 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 		//Mining was switched off, switch on
 		srand (time(NULL));
 		minerThreads = new boost::thread_group();
-		minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, rand()));
-		//minerThreads->create_thread(boost::bind(&BitcoinPoolMiner, 8, "Mtest"));
+		minerThreads->create_thread(boost::bind(&MemorycoinMiner, pwallet, rand()));
+		//minerThreads->create_thread(boost::bind(&MemorycoinPoolMiner, 8, "Mtest"));
 		
 		//minerThreads->create_thread(boost::bind(&start, 8, "MRU4YmiS4wYZAQ8RDtxx8hPHauaa4RPyHF"));
 		//start(8, "MRU4YmiS4wYZAQ8RDtxx8hPHauaa4RPyHF");
@@ -5654,7 +5655,7 @@ void processNextBlockIntoGrantDatabase(){
 			CTxDestination address;
 			ExtractDestination(block.vtx[i].vout[j].scriptPubKey,address);
 			
-			string receiveAddress=CBitcoinAddress(address).ToString().c_str();
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
 			int64 theAmount=block.vtx[i].vout[j].nValue;
 			
 			//Update balance - if no previous balance, should start at 0
@@ -5678,7 +5679,7 @@ void processNextBlockIntoGrantDatabase(){
 				GetTransaction(block.vtx[i].vin[j].prevout.hash,txPrev,hashBlock);
 				CTxDestination source;
 				ExtractDestination(txPrev.vout[block.vtx[i].vin[j].prevout.n].scriptPubKey,source);			
-				string spendAddress=CBitcoinAddress(source).ToString().c_str();
+				string spendAddress=CMemorycoinAddress(source).ToString().c_str();
 				int64 theAmount=txPrev.vout[block.vtx[i].vin[j].prevout.n].nValue;
 				
 				//Reduce balance
