@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = memorycoind
-#macx:TARGET = "MemoryCoin-Qt"
+#macx:TARGET = "Memorycoin-Qt"
 VERSION = 3.0.0
 INCLUDEPATH += src src/json 
 QT += network 
@@ -24,10 +24,10 @@ UI_DIR = build
 
 # use: qmake "RELEASE=1"
 contains(RELEASE, 1) {
-    # Mac: compile for maximum compatibility (10.5, 32-bit)
-    macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
-    macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
-    macx:QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
+    # Mac: compile for maximum compatibility (10.7, 64-bit)
+    macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.7.sdk
+    macx:QMAKE_CFLAGS += -mmacosx-version-min=10.7 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.7.sdk
+    macx:QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.7 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.7.sdk
 
     !win32:!macx {
         # Linux: static link and extra security (see: https://wiki.debian.org/Hardening)
@@ -93,8 +93,8 @@ contains(USE_IPV6, -) {
     DEFINES += USE_IPV6=$$USE_IPV6
 }
 
-contains(BITCOIN_NEED_QT_PLUGINS, 1) {
-    DEFINES += BITCOIN_NEED_QT_PLUGINS
+contains(MEMORYCOIN_NEED_QT_PLUGINS, 1) {
+    DEFINES += MEMORYCOIN_NEED_QT_PLUGINS
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
 }
 
@@ -165,7 +165,7 @@ HEADERS += \
     src/json/json_spirit.h \
     src/wallet.h \
     src/keystore.h \
-    src/bitcoinrpc.h \
+    src/memorycoinrpc.h \
     src/crypter.h \
     src/protocol.h \
     src/allocators.h \
@@ -178,7 +178,7 @@ HEADERS += \
     src/threadsafety.h \
     src/limitedmap.h 
 
-# src/qt/bitcoin.cpp \
+# src/qt/memorycoin.cpp \
 SOURCES +=  \
     src/main.cpp \
     src/alert.cpp \
@@ -198,7 +198,7 @@ SOURCES +=  \
     src/walletdb.cpp \
     src/wallet.cpp \
     src/keystore.cpp \
-    src/bitcoinrpc.cpp \
+    src/memorycoinrpc.cpp \
     src/rpcdump.cpp \
     src/rpcnet.cpp \
     src/rpcmining.cpp \
@@ -212,7 +212,7 @@ SOURCES +=  \
     src/txdb.cpp \
     src/momentum.cpp
 
-RESOURCES += src/qt/bitcoin.qrc
+RESOURCES += src/qt/memorycoin.qrc
 
 #FORMS += src/qt/forms/sendcoinsdialog.ui \
 #    src/qt/forms/addressbookpage.ui \
@@ -232,22 +232,22 @@ SOURCES += src/qt/qrcodedialog.cpp
 FORMS += src/qt/forms/qrcodedialog.ui
 }
 
-contains(BITCOIN_QT_TEST, 1) {
+contains(MEMORYCOIN_QT_TEST, 1) {
 SOURCES += src/qt/test/test_main.cpp \
     src/qt/test/uritests.cpp
 HEADERS += src/qt/test/uritests.h
 DEPENDPATH += src/qt/test
 QT += testlib
-TARGET = bitcoin-qt_test
-DEFINES += BITCOIN_QT_TEST
+TARGET = memorycoin-qt_test
+DEFINES += MEMORYCOIN_QT_TEST
 }
 macx: CONFIG -= app_bundle
 
 CODECFORTR = UTF-8
 
 # for lrelease/lupdate
-# also add new translations to src/qt/bitcoin.qrc under translations/
-TRANSLATIONS = $$files(src/qt/locale/bitcoin_*.ts)
+# also add new translations to src/qt/memorycoin.qrc under translations/
+TRANSLATIONS = $$files(src/qt/locale/memorycoin_*.ts)
 
 isEmpty(QMAKE_LRELEASE) {
     win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\\lrelease.exe
@@ -266,7 +266,7 @@ QMAKE_EXTRA_COMPILERS += TSQM
 OTHER_FILES += README.md \
     doc/*.rst \
     doc/*.txt \
-    src/qt/res/bitcoin-qt.rc \
+    src/qt/res/memorycoin-qt.rc \
     src/test/*.cpp \
     src/test/*.h \
     src/qt/test/*.cpp \
@@ -303,7 +303,7 @@ isEmpty(BOOST_INCLUDE_PATH) {
 }
 
 win32:DEFINES += WIN32
-win32:RC_FILE = src/qt/res/bitcoin-qt.rc
+win32:RC_FILE = src/qt/res/memorycoin-qt.rc
 
 win32:!contains(MINGW_THREAD_BUGFIX, 0) {
     # At least qmake's win32-g++-cross profile is missing the -lmingwthrd
@@ -327,7 +327,7 @@ win32:!contains(MINGW_THREAD_BUGFIX, 0) {
 #macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm
 #macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit
 #macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
-#macx:ICON = src/qt/res/icons/bitcoin.icns
+#macx:ICON = src/qt/res/icons/memorycoin.icns
 #macx:QMAKE_CFLAGS_THREAD += -pthread
 #macx:QMAKE_LFLAGS_THREAD += -pthread
 #macx:QMAKE_CXXFLAGS_THREAD += -pthread
