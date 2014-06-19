@@ -2,11 +2,11 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #include "main.h"
 #include "db.h"
 #include "init.h"
-#include "bitcoinrpc.h"
+#include "memorycoinrpc.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -43,7 +43,7 @@ Value setgenerate(const Array& params, bool fHelp)
     }
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
 
-    GenerateBitcoins(fGenerate, pwalletMain);
+    GenerateMemorycoins(fGenerate, pwalletMain);
     return Value::null;
 }
 
