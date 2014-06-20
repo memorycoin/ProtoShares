@@ -4,8 +4,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2013-2014 Memorycoin Dev Team
 
-#ifndef memorycoinUNITS_H
-#define memorycoinUNITS_H
+#ifndef MEMORYCOINUNITS_H
+#define MEMORYCOINUNITS_H
 
 #include <QString>
 #include <QAbstractListModel>
@@ -72,4 +72,4 @@ private:
 };
 typedef MemorycoinUnits::Unit MemorycoinUnit;
 
-#endif // memorycoinUNITS_H
+#endif // MEMORYCOINUNITS_H
