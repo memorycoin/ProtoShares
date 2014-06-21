@@ -15,7 +15,7 @@ src/test_memorycoin
 *.qm
 Makefile
 memorycoin-qt
-Memorycoin-Qt.app
+Bitcoin-Qt.app
 
 # Unit-tests
 Makefile.test
