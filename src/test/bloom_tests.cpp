@@ -1,3 +1,9 @@
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #include <boost/test/unit_test.hpp>
 #include <vector>
 
@@ -70,7 +76,7 @@ BOOST_AUTO_TEST_CASE(bloom_create_insert_serialize_with_tweak)
 BOOST_AUTO_TEST_CASE(bloom_create_insert_key)
 {
     string strSecret = string("5Kg1gnAjaLfKiwhhPpGS3QfRg2m6awQvaj98JCZBZQ5SuS2F15C");
-    CBitcoinSecret vchSecret;
+    CMemorycoinSecret vchSecret;
     BOOST_CHECK(vchSecret.SetString(strSecret));
 
     CKey key;

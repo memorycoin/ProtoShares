@@ -129,7 +129,7 @@ Value importprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "importprivkey <memorycoinprivkey> [label] [rescan=true]\n"
+            "importprivkey <Memorycoin Private Key> [label] [rescan=true]\n"
             "Adds a private key (as returned by dumpprivkey) to your wallet.");
 
     

@@ -92,7 +92,7 @@ map<uint256, set<uint256> > mapOrphanTransactionsByPrev;
 // Constant stuff for coinbase transactions we create:
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "MemoryCoin Signed Message:\n";
+const string strMessageMagic = "Memorycoin Signed Message:\n";
 
 double dHashesPerSec = 0.0;
 int64 nHPSTimerStart = 0;
@@ -398,7 +398,7 @@ bool CTxOut::IsDust() const
     // (5430 satoshis) with default nMinRelayTxFee
     //return ((nValue*1000)/(3*((int)GetSerializeSize(SER_DISK,0)+148)) < CTransaction::nMinRelayTxFee);
 
-	//MemoryCoin requires small amounts of coins be sent to allow for voting
+	//Memorycoin requires small amounts of coins be sent to allow for voting
 	return false;
 }
 
@@ -4565,7 +4565,7 @@ public:
 
 std::map<std::string,int64> getGenesisBalances(){
 	std::map<std::string,int64> genesisBalances;
-	//MemoryCoin beta / ProtoShares balances
+	//Memorycoin beta / ProtoShares balances
 	ifstream myfile ("genesisbalances.txt");
 	char * pEnd;
 	std::string line;
@@ -4955,7 +4955,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     fprintf( stderr, "hash %s < %s\n", hash.ToString().c_str(), hashTarget.ToString().c_str() );
 
     //// debug print
-    printf("MemoryCoinMiner:\n");
+    printf("MemorycoinMiner:\n");
     printf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
     pblock->print();
     printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
@@ -4964,7 +4964,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != hashBestChain)
-            return error("MemoryCoinMiner : generated block is stale");
+            return error("MemorycoinMiner : generated block is stale");
 
         // Remove key from key pool
         reservekey.KeepKey();
@@ -4978,7 +4978,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
         // Process this block the same as if we had received it from another node
         CValidationState state;
         if (!ProcessBlock(state, NULL, pblock))
-            return error("MemoryCoinMiner : ProcessBlock, block not accepted");
+            return error("MemorycoinMiner : ProcessBlock, block not accepted");
     }
 
     return true;
@@ -4988,7 +4988,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 {
-    printf("MemoryCoinMiner started\n");
+    printf("MemorycoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("memorycoin-miner");
 
@@ -5029,7 +5029,7 @@ void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
         CBlock *pblock = &pblocktemplate->block;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-        printf("Running MemoryCoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        printf("Running MemorycoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
@@ -5064,7 +5064,7 @@ void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 		for(int i=0;i<1;i++){
 			pblock->nNonce=pblock->nNonce+1;
 			if (nThreads == 0){
-				printf("MemoryCoinMiner terminated\n");
+				printf("MemorycoinMiner terminated\n");
 				delete [] scratchpad;
 				return;
 			}
@@ -5158,7 +5158,7 @@ void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
     } }
     catch (boost::thread_interrupted)
     {	    
-        printf("MemoryCoinMiner terminated\n");
+        printf("MemorycoinMiner terminated\n");
 	delete [] scratchpad;
         throw;
     }
@@ -5210,7 +5210,7 @@ void LaunchPoolMiner(){
     // Yam path
     string yamPath = yamDir+"yam";
 
-    // Osx need escape white space MemoryCoin-Qt 2.app to MemoryCoin-Qt\\ 2.app
+    // Osx need escape white space Memorycoin-Qt 2.app to Memorycoin-Qt\\ 2.app
     string w = " ";
     string r = "\\\\ ";
     boost::algorithm::replace_all(yamPath, w,r);

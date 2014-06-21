@@ -2,7 +2,6 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2013-2014 Memorycoin Dev Team
-
 #include <string>
 
 #include "version.h"
@@ -13,8 +12,7 @@
 const std::string CLIENT_NAME("Memorycoin");
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   "3.0.0"
-
+#define CLIENT_VERSION_SUFFIX   "2.9.999"
 
 // The following part of the code determines the CLIENT_BUILD variable.
 // Several mechanisms are used for this:

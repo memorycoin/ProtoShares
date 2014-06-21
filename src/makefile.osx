@@ -7,6 +7,7 @@
 
 # Mac OS X makefile for memorycoin
 # Originally by Laszlo Hanyecz (solar@heliacal.net)
+# Copyright (c) 2013-2014 Memorycoin Dev Team
 
 CXX=llvm-g++
 DEPSDIR=/opt/local

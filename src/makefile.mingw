@@ -16,6 +16,9 @@
 #
 # 'make clean' assumes it is running inside a MSYS shell, and uses 'rm'
 # to remove files.
+#
+#
+# Copyright (c) 2013-2014 Memorycoin Dev Team
 
 CXX ?= g++
 
