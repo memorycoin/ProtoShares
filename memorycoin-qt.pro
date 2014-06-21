@@ -1,12 +1,9 @@
 TEMPLATE = app
 TARGET = memorycoin-qt
-<<<<<<< HEAD
 macx:TARGET = "MemoryCoin-Qt"
 VERSION = 0.8.584
-=======
 macx:TARGET = "Memorycoin-Qt"
 VERSION = 2.999.999
->>>>>>> 96d6688834f5b5b07c8ad5ad6e1e059d6caf401f
 INCLUDEPATH += src src/json src/qt
 QT += network widgets 
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE SCRYPT_CHACHA SCRYPT_KECCAK512
