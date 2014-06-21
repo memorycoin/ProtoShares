@@ -6,7 +6,7 @@ from datetime import date
 import os
 
 # mmc db dir
-mmc_db="/Users/kral/Library/Application\ Support/MemoryCoin/";
+mmc_db="/Users/kral/Library/Application\ Support/Memorycoin/";
 # relase dir
 relase_dir="../../../build-memorycoin-qt-Desktop_Qt_5_2_0_clang_64bit-Release/"
 #Mac Deploy Tool for dep.
@@ -14,7 +14,7 @@ mac_dep="/Users/kral/Qt5.2.0/5.2.0/clang_64/bin/macdeployqt"
 
 
 # Open MMc info.plist
-File    = relase_dir+"MemoryCoin-Qt.app/Contents/Info.plist"
+File    = relase_dir+"Memorycoin-Qt.app/Contents/Info.plist"
 version    = "unknown";
 # Read Qt config File grab version
 fileForGrabbingVersion = "../../memorycoin-qt.pro"
@@ -36,23 +36,23 @@ print "Info.plist reload"
 
 
 # Fast Sync
-os.system("cp "+mmc_db+"hashlookup.txt "+relase_dir+"MemoryCoin-Qt.app/Contents/MacOS/trustedhashlookup.txt")
+os.system("cp "+mmc_db+"hashlookup.txt "+relase_dir+"Memorycoin-Qt.app/Contents/MacOS/trustedhashlookup.txt")
 print "trustedhashlookup.txt reload"
 
 # copy yam miner
-os.system('cp ./yam '+relase_dir+'MemoryCoin-Qt.app/Contents/MacOS/yam')
+os.system('cp ./yam '+relase_dir+'Memorycoin-Qt.app/Contents/MacOS/yam')
 # chmod
-os.system('chmod +x '+relase_dir+'MemoryCoin-Qt.app/Contents/MacOS/yam')
+os.system('chmod +x '+relase_dir+'Memorycoin-Qt.app/Contents/MacOS/yam')
 print "Yam Miner Copied"
-os.system('cp ./yam-aesni-off.cfg '+relase_dir+'MemoryCoin-Qt.app/Contents/MacOS/yam-aesni-off.cfg')
-os.system('cp ./yam-aesni-on.cfg '+relase_dir+'MemoryCoin-Qt.app/Contents/MacOS/yam-aesni-on.cfg')
+os.system('cp ./yam-aesni-off.cfg '+relase_dir+'Memorycoin-Qt.app/Contents/MacOS/yam-aesni-off.cfg')
+os.system('cp ./yam-aesni-on.cfg '+relase_dir+'Memorycoin-Qt.app/Contents/MacOS/yam-aesni-on.cfg')
 print "Yam Miner Configs Copied"
 
 # Mac Deploy
-#os.system(mac_dep+' '+relase_dir+'MemoryCoin-Qt.app -verbose=3')
+#os.system(mac_dep+' '+relase_dir+'Memorycoin-Qt.app -verbose=3')
 
 
 
-#otool -l ../../../build-memorycoin-qt-Desktop_Qt_5_2_0_clang_64bit-Release/MemoryCoin-Qt.app/Contents/MacOS/MemoryCoin-Qt
+#otool -l ../../../build-memorycoin-qt-Desktop_Qt_5_2_0_clang_64bit-Release/Memorycoin-Qt.app/Contents/MacOS/Memorycoin-Qt
 
-#/Users/kral/Qt5.2.0/5.2.0/clang_64/bin/macdeployqt ../../../build-memorycoin-qt-Desktop_Qt_5_2_0_clang_64bit-Release/MemoryCoin-Qt.app
+#/Users/kral/Qt5.2.0/5.2.0/clang_64/bin/macdeployqt ../../../build-memorycoin-qt-Desktop_Qt_5_2_0_clang_64bit-Release/Memorycoin-Qt.app

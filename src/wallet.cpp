@@ -3,6 +3,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2013-2014 Memorycoin Dev Team
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96d6688834f5b5b07c8ad5ad6e1e059d6caf401f
 #include "wallet.h"
 #include "walletdb.h"
 #include "crypter.h"
@@ -918,7 +922,7 @@ string CWallet::getDefaultWalletAddress(){
     txNew.vout[0].scriptPubKey << pubkey << OP_CHECKSIG;
     CTxDestination address;
     ExtractDestination(txNew.vout[0].scriptPubKey,address);
-    string receiveAddress=CBitcoinAddress(address).ToString();
+    string receiveAddress=CMemorycoinAddress(address).ToString();
     //printf("pubkey:%s\n",receiveAddress.c_str());
     return receiveAddress.erase(0,0);
 }
@@ -930,7 +934,7 @@ int64 CWallet::GetBalanceInDefaultAddress(){
         {
         BOOST_FOREACH(CTxDestination address, grouping)
             {
-            if(mainWalletAddress==CBitcoinAddress(address).ToString()){
+            if(mainWalletAddress==CMemorycoinAddress(address).ToString()){
                 return balances[address];
             }
         }
@@ -1268,7 +1272,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend,
 
                     // Fill a vout to ourself
                     // TODO: pass in scriptChange instead of reservekey so
-                    // change transaction isn't always pay-to-bitcoin-address
+                    // change transaction isn't always pay-to-memorycoin-address
                     CScript scriptChange;
                     scriptChange.SetDestination(vchPubKey.GetID());
 
@@ -1451,7 +1455,7 @@ string CWallet::SendMoneyToDestination(const CTxDestination& address, int64 nVal
     if (nValue + nTransactionFee > GetBalance())
         return _("Insufficient funds");
 
-    // Parse Bitcoin address
+    // Parse Memorycoin address
     CScript scriptPubKey;
     scriptPubKey.SetDestination(address);
 
@@ -1493,7 +1497,7 @@ bool CWallet::SetAddressBookName(const CTxDestination& address, const string& st
     NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address), (mi == mapAddressBook.end()) ? CT_NEW : CT_UPDATED);
     if (!fFileBacked)
         return false;
-    return CWalletDB(strWalletFile).WriteName(CBitcoinAddress(address).ToString(), strName);
+    return CWalletDB(strWalletFile).WriteName(CMemorycoinAddress(address).ToString(), strName);
 }
 
 bool CWallet::DelAddressBookName(const CTxDestination& address)
@@ -1502,7 +1506,7 @@ bool CWallet::DelAddressBookName(const CTxDestination& address)
     NotifyAddressBookChanged(this, address, "", ::IsMine(*this, address), CT_DELETED);
     if (!fFileBacked)
         return false;
-    return CWalletDB(strWalletFile).EraseName(CBitcoinAddress(address).ToString());
+    return CWalletDB(strWalletFile).EraseName(CMemorycoinAddress(address).ToString());
 }
 
 
@@ -1534,7 +1538,7 @@ bool CWallet::GetTransaction(const uint256 &hashTx, CWalletTx& wtx)
 }
 
 bool CWallet::switchDefaultKey(const string newAddress){
-    CBitcoinAddress address(newAddress);
+    CMemorycoinAddress address(newAddress);
     if (address.IsValid()){
         CKeyID keyID;
         if (!address.GetKeyID(keyID))

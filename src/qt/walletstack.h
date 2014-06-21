@@ -1,8 +1,12 @@
 /*
- * Qt4 bitcoin GUI.
+ * Qt4 memorycoin GUI.
  *
  * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2013
+ * Copyright (c) 2010 Satoshi Nakamoto
+ * Copyright (c) 2009-2012 The Bitcoin developers
+ * Distributed under the MIT/X11 software license, see the accompanying
+ * file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ * Copyright (c) 2013-2014 Memorycoin Dev Team
  */
 #ifndef WALLETSTACK_H
 #define WALLETSTACK_H
@@ -11,7 +15,7 @@
 #include <QMap>
 #include <boost/shared_ptr.hpp>
 
-class BitcoinGUI;
+class MemorycoinGUI;
 class TransactionTableModel;
 class ClientModel;
 class WalletModel;
@@ -45,7 +49,7 @@ public:
     explicit WalletStack(QWidget *parent = 0);
     ~WalletStack();
 
-    void setBitcoinGUI(BitcoinGUI *gui) { this->gui = gui; }
+    void setMemorycoinGUI(MemorycoinGUI *gui) { this->gui = gui; }
 
     void setClientModel(ClientModel *clientModel) { this->clientModel = clientModel; }
 
@@ -59,7 +63,7 @@ public:
     void showOutOfSyncWarning(bool fShow);
 
 private:
-    BitcoinGUI *gui;
+    MemorycoinGUI *gui;
     ClientModel *clientModel;
     QMap<QString, WalletView*> mapWalletViews;
 
