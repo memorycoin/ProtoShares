@@ -1,12 +1,13 @@
 TEMPLATE = app
 TARGET = memorycoin-qt
-macx:TARGET = "MemoryCoin-Qt"
-VERSION = 0.8.583
+macx:TARGET = "Memorycoin-Qt"
+VERSION = 2.999.999
 INCLUDEPATH += src src/json src/qt
 QT += network widgets 
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE SCRYPT_CHACHA SCRYPT_KECCAK512
 CONFIG += no_include_pwd
 CONFIG += thread
+CONFIG += static
 
 # for boost 1.37, add -mt to the boost libraries
 # use: qmake BOOST_LIB_SUFFIX=-mt
@@ -18,16 +19,31 @@ CONFIG += thread
 #    BOOST_INCLUDE_PATH, BOOST_LIB_PATH, BDB_INCLUDE_PATH,
 #    BDB_LIB_PATH, OPENSSL_INCLUDE_PATH and OPENSSL_LIB_PATH respectively
 
+#WINDOWS MINGW32 Build
+#https://bitcointalk.org/index.php?topic=149479.0
+#Thanks nitrogenics!
+#BOOST_LIB_SUFFIX=-mgw48-mt-s-1_55
+BOOST_INCLUDE_PATH=C:/deps/boost_1_55_0
+BOOST_LIB_PATH=C:/deps/boost_1_55_0/stage/lib
+BDB_INCLUDE_PATH=C:/deps/db-4.8.30.NC/build_unix
+BDB_LIB_PATH=C:/deps/db-4.8.30.NC/build_unix
+OPENSSL_INCLUDE_PATH=C:/deps/openssl-1.0.1g/include
+OPENSSL_LIB_PATH=C:/deps/openssl-1.0.1g
+MINIUPNPC_INCLUDE_PATH=C:/deps/
+MINIUPNPC_LIB_PATH=C:/deps/miniupnpc
+QRENCODE_INCLUDE_PATH=C:/deps/qrencode-3.4.3
+QRENCODE_LIB_PATH=C:/deps/qrencode-3.4.3/.libs
+
 OBJECTS_DIR = build
 MOC_DIR = build
 UI_DIR = build
 
 # use: qmake "RELEASE=1"
 contains(RELEASE, 1) {
-    # Mac: compile for maximum compatibility (10.5, 32-bit)
-    macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
-    macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
-    macx:QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
+    # Mac: compile for maximum compatibility (10.7, 64-bit)
+    macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.7.sdk
+    macx:QMAKE_CFLAGS += -mmacosx-version-min=10.7 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.7.sdk
+    macx:QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.7 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.7.sdk
 
     !win32:!macx {
         # Linux: static link and extra security (see: https://wiki.debian.org/Hardening)
@@ -47,7 +63,7 @@ QMAKE_CXXFLAGS *= -D_FORTIFY_SOURCE=2
 # for extra security on Windows: enable ASLR and DEP via GCC linker flags
 win32:QMAKE_LFLAGS *= -Wl,--dynamicbase -Wl,--nxcompat
 # on Windows: enable GCC large address aware linker flag
-win32:QMAKE_LFLAGS *= -Wl,--large-address-aware
+win32:QMAKE_LFLAGS *= -Wl,--large-address-aware -static
 
 # use: qmake "USE_QRCODE=1"
 # libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
@@ -93,8 +109,8 @@ contains(USE_IPV6, -) {
     DEFINES += USE_IPV6=$$USE_IPV6
 }
 
-contains(BITCOIN_NEED_QT_PLUGINS, 1) {
-    DEFINES += BITCOIN_NEED_QT_PLUGINS
+contains(MEMORYCOIN_NEED_QT_PLUGINS, 1) {
+    DEFINES += MEMORYCOIN_NEED_QT_PLUGINS
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
 }
 
@@ -109,7 +125,7 @@ LIBS += $$PWD/src/leveldb/libleveldb.a $$PWD/src/leveldb/libmemenv.a
         QMAKE_RANLIB = $$replace(QMAKE_STRIP, strip, ranlib)
     }
     LIBS += -lshlwapi
-    genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX TARGET_OS=OS_WINDOWS_CROSSCOMPILE $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libleveldb.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libmemenv.a
+    #genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX TARGET_OS=OS_WINDOWS_CROSSCOMPILE $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libleveldb.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libmemenv.a
 }
 genleveldb.target = $$PWD/src/leveldb/libleveldb.a
 genleveldb.depends = FORCE
@@ -132,7 +148,7 @@ QMAKE_CXXFLAGS_WARN_ON = -fdiagnostics-show-option -Wall -Wextra -Wformat -Wform
 
 # Input
 DEPENDPATH += src src/json src/qt
-HEADERS += src/qt/bitcoingui.h \
+HEADERS += src/qt/memorycoingui.h \
     src/qt/transactiontablemodel.h \
     src/qt/addresstablemodel.h \
     src/qt/optionsdialog.h \
@@ -141,7 +157,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/signverifymessagedialog.h \
     src/qt/aboutdialog.h \
     src/qt/editaddressdialog.h \
-    src/qt/bitcoinaddressvalidator.h \
+    src/qt/memorycoinaddressvalidator.h \
     src/alert.h \
     src/addrman.h \
     src/base58.h \
@@ -180,7 +196,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/monitoreddatamapper.h \
     src/qt/transactiondesc.h \
     src/qt/transactiondescdialog.h \
-    src/qt/bitcoinamountfield.h \
+    src/qt/memorycoinamountfield.h \
     src/wallet.h \
     src/keystore.h \
     src/qt/transactionfilterproxy.h \
@@ -189,13 +205,13 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/walletview.h \
     src/qt/walletstack.h \
     src/qt/walletframe.h \
-    src/bitcoinrpc.h \
+    src/memorycoinrpc.h \
     src/qt/overviewpage.h \
     src/qt/csvmodelwriter.h \
     src/crypter.h \
     src/qt/sendcoinsentry.h \
     src/qt/qvalidatedlineedit.h \
-    src/qt/bitcoinunits.h \
+    src/qt/memorycoinunits.h \
     src/qt/qvaluecombobox.h \
     src/qt/askpassphrasedialog.h \
     src/protocol.h \
@@ -215,8 +231,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/votecoinsdialog.h \
     src/qt/votecoinsentry.h
 
-SOURCES += src/qt/bitcoin.cpp \
-    src/qt/bitcoingui.cpp \
+SOURCES += src/qt/memorycoin.cpp \
+    src/qt/memorycoingui.cpp \
     src/qt/transactiontablemodel.cpp \
     src/qt/addresstablemodel.cpp \
     src/qt/optionsdialog.cpp \
@@ -225,7 +241,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/signverifymessagedialog.cpp \
     src/qt/aboutdialog.cpp \
     src/qt/editaddressdialog.cpp \
-    src/qt/bitcoinaddressvalidator.cpp \
+    src/qt/memorycoinaddressvalidator.cpp \
     src/alert.cpp \
     src/version.cpp \
     src/sync.cpp \
@@ -249,8 +265,8 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/monitoreddatamapper.cpp \
     src/qt/transactiondesc.cpp \
     src/qt/transactiondescdialog.cpp \
-    src/qt/bitcoinstrings.cpp \
-    src/qt/bitcoinamountfield.cpp \
+    src/qt/memorycoinstrings.cpp \
+    src/qt/memorycoinamountfield.cpp \
     src/wallet.cpp \
     src/keystore.cpp \
     src/qt/transactionfilterproxy.cpp \
@@ -259,7 +275,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/walletview.cpp \
     src/qt/walletstack.cpp \
     src/qt/walletframe.cpp \
-    src/bitcoinrpc.cpp \
+    src/memorycoinrpc.cpp \
     src/rpcdump.cpp \
     src/rpcnet.cpp \
     src/rpcmining.cpp \
@@ -271,7 +287,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/crypter.cpp \
     src/qt/sendcoinsentry.cpp \
     src/qt/qvalidatedlineedit.cpp \
-    src/qt/bitcoinunits.cpp \
+    src/qt/memorycoinunits.cpp \
     src/qt/qvaluecombobox.cpp \
     src/qt/askpassphrasedialog.cpp \
     src/protocol.cpp \
@@ -286,7 +302,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/votecoinsdialog.cpp \
     src/qt/votecoinsentry.cpp
     
-RESOURCES += src/qt/bitcoin.qrc
+RESOURCES += src/qt/memorycoin.qrc
 
 FORMS += src/qt/forms/sendcoinsdialog.ui \
     src/qt/forms/addressbookpage.ui \
@@ -308,22 +324,22 @@ SOURCES += src/qt/qrcodedialog.cpp
 FORMS += src/qt/forms/qrcodedialog.ui
 }
 
-contains(BITCOIN_QT_TEST, 1) {
+contains(MEMORYCOIN_QT_TEST, 1) {
 SOURCES += src/qt/test/test_main.cpp \
     src/qt/test/uritests.cpp
 HEADERS += src/qt/test/uritests.h
 DEPENDPATH += src/qt/test
 QT += testlib
-TARGET = bitcoin-qt_test
-DEFINES += BITCOIN_QT_TEST
+TARGET = memorycoin-qt_test
+DEFINES += MEMORYCOIN_QT_TEST
   macx: CONFIG -= app_bundle
 }
 
 CODECFORTR = UTF-8
 
 # for lrelease/lupdate
-# also add new translations to src/qt/bitcoin.qrc under translations/
-TRANSLATIONS = $$files(src/qt/locale/bitcoin_*.ts)
+# also add new translations to src/qt/memorycoin.qrc under translations/
+TRANSLATIONS = $$files(src/qt/locale/memorycoin_*.ts)
 
 isEmpty(QMAKE_LRELEASE) {
     win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\\lrelease.exe
@@ -342,7 +358,7 @@ QMAKE_EXTRA_COMPILERS += TSQM
 OTHER_FILES += README.md \
     doc/*.rst \
     doc/*.txt \
-    src/qt/res/bitcoin-qt.rc \
+    src/qt/res/memorycoin-qt.rc \
     src/test/*.cpp \
     src/test/*.h \
     src/qt/test/*.cpp \
@@ -381,7 +397,7 @@ isEmpty(BOOST_INCLUDE_PATH) {
 }
 
 win32:DEFINES += WIN32
-win32:RC_FILE = src/qt/res/bitcoin-qt.rc
+win32:RC_FILE = src/qt/res/memorycoin-qt.rc
 
 win32:!contains(MINGW_THREAD_BUGFIX, 0) {
     # At least qmake's win32-g++-cross profile is missing the -lmingwthrd

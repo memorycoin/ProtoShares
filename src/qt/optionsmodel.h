@@ -1,9 +1,15 @@
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #ifndef OPTIONSMODEL_H
 #define OPTIONSMODEL_H
 
 #include <QAbstractListModel>
 
-/** Interface from Qt to configuration data structure for Bitcoin client.
+/** Interface from Qt to configuration data structure for Memorycoin client.
    To Qt, the options are presented as a list with the different options
    laid out vertically.
    This can be changed to a tree once the settings become sufficiently
@@ -26,7 +32,7 @@ public:
         ProxyPort,         // int
         ProxySocksVersion, // int
         Fee,               // qint64
-        DisplayUnit,       // BitcoinUnits::Unit
+        DisplayUnit,       // MemorycoinUnits::Unit
         DisplayAddresses,  // bool
         Language,          // QString
         OptionIDRowCount,

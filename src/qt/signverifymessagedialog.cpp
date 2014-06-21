@@ -1,3 +1,9 @@
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #include "signverifymessagedialog.h"
 #include "ui_signverifymessagedialog.h"
 
@@ -24,11 +30,11 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
 
 #if (QT_VERSION >= 0x040700)
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->addressIn_SM->setPlaceholderText(tr("Enter a MemoryCoin address (e.g. MVTEchao4RjkTTyjMcYf8dnpQ7BqJdNVhr)"));
+    ui->addressIn_SM->setPlaceholderText(tr("Enter a Memorycoin address (e.g. MCFLuvFdLaJQ4nzWJJD2MKVh5g1vo11caK)"));
     ui->signatureOut_SM->setPlaceholderText(tr("Click \"Sign Message\" to generate signature"));
 
-    ui->addressIn_VM->setPlaceholderText(tr("Enter a MemoryCoin address (e.g. MVTEchao4RjkTTyjMcYf8dnpQ7BqJdNVhr)"));
-    ui->signatureIn_VM->setPlaceholderText(tr("Enter MemoryCoin signature"));
+    ui->addressIn_VM->setPlaceholderText(tr("Enter a Memorycoin address (e.g. MCFLuvFdLaJQ4nzWJJD2MKVh5g1vo11caK)"));
+    ui->signatureIn_VM->setPlaceholderText(tr("Enter Memorycoin signature"));
 #endif
 
     GUIUtil::setupAddressWidget(ui->addressIn_SM, this);
@@ -41,8 +47,8 @@ SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
     ui->messageIn_VM->installEventFilter(this);
     ui->signatureIn_VM->installEventFilter(this);
 
-    ui->signatureOut_SM->setFont(GUIUtil::bitcoinAddressFont());
-    ui->signatureIn_VM->setFont(GUIUtil::bitcoinAddressFont());
+    ui->signatureOut_SM->setFont(GUIUtil::memorycoinAddressFont());
+    ui->signatureIn_VM->setFont(GUIUtil::memorycoinAddressFont());
 }
 
 SignVerifyMessageDialog::~SignVerifyMessageDialog()
@@ -105,7 +111,7 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
     /* Clear old signature to ensure users don't get confused on error with an old signature displayed */
     ui->signatureOut_SM->clear();
 
-    CBitcoinAddress addr(ui->addressIn_SM->text().toStdString());
+    CMemorycoinAddress addr(ui->addressIn_SM->text().toStdString());
     if (!addr.IsValid())
     {
         ui->addressIn_SM->setValid(false);
@@ -186,7 +192,7 @@ void SignVerifyMessageDialog::on_addressBookButton_VM_clicked()
 
 void SignVerifyMessageDialog::on_verifyMessageButton_VM_clicked()
 {
-    CBitcoinAddress addr(ui->addressIn_VM->text().toStdString());
+    CMemorycoinAddress addr(ui->addressIn_VM->text().toStdString());
     if (!addr.IsValid())
     {
         ui->addressIn_VM->setValid(false);
@@ -227,7 +233,7 @@ void SignVerifyMessageDialog::on_verifyMessageButton_VM_clicked()
         return;
     }
 
-    if (!(CBitcoinAddress(key.GetPubKey().GetID()) == addr))
+    if (!(CMemorycoinAddress(key.GetPubKey().GetID()) == addr))
     {
         ui->statusLabel_VM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_VM->setText(QString("<nobr>") + tr("Message verification failed.") + QString("</nobr>"));

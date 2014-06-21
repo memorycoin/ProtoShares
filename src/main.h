@@ -1,9 +1,10 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_MAIN_H
-#define BITCOIN_MAIN_H
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+#ifndef MEMORYCOIN_MAIN_H
+#define MEMORYCOIN_MAIN_H
 
 #include "bignum.h"
 #include "sync.h"
@@ -155,7 +156,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle);
 /** Run an instance of the script checking thread */
 void ThreadScriptCheck();
 /** Run the miner threads */
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
+void GenerateMemorycoins(bool fGenerate, CWallet* pwallet);
 /** Generate a new block, without valid proof-of-work */
 CBlockTemplate* CreateNewBlock(CReserveKey& reservekey);
 /** Modify the extranonce in a block */
@@ -585,7 +586,7 @@ public:
      */
     unsigned int GetP2SHSigOpCount(CCoinsViewCache& mapInputs) const;
 
-    /** Amount of bitcoins spent by this transaction.
+    /** Amount of memorycoins spent by this transaction.
         @return sum of all outputs (note: does not include fees)
      */
     int64 GetValueOut() const
@@ -600,7 +601,7 @@ public:
         return nValueOut;
     }
 
-    /** Amount of bitcoins coming in to this transaction
+    /** Amount of memorycoins coming in to this transaction
         Note that lightweight clients may not know anything besides the hash of previous transactions,
         so may not be able to calculate this.
 

@@ -1,9 +1,11 @@
 # -*- mode: Makefile; -*-
-# Copyright (c) 2011 Bitcoin Developers
+# Copyright (c) 2010 Satoshi Nakamoto
+# Copyright (c) 2009-2012 The Bitcoin developers
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2013-2014 Memorycoin Dev Team
 
-# Mac OS X makefile for bitcoin
+# Mac OS X makefile for memorycoin
 # Originally by Laszlo Hanyecz (solar@heliacal.net)
 
 CXX=llvm-g++
@@ -27,7 +29,7 @@ LIBS= -dead_strip
 TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
 
 ifdef STATIC
-# Build STATIC if you are redistributing the bitcoind binary
+# Build STATIC if you are redistributing the memorycoind binary
 TESTLIBS += \
  $(DEPSDIR)/lib/libboost_unit_test_framework-mt.a
 LIBS += \
@@ -87,7 +89,7 @@ OBJS= \
     obj/momentum.o \
     obj/net.o \
     obj/protocol.o \
-    obj/bitcoinrpc.o \
+    obj/memorycoinrpc.o \
     obj/rpcdump.o \
     obj/rpcnet.o \
     obj/rpcmining.o \
@@ -123,8 +125,8 @@ endif
 
 all: memorycoind
 
-test check: test_bitcoin FORCE
-	./test_bitcoin
+test check: test_memorycoin FORCE
+	./test_memorycoin
 
 #
 # LevelDB support
@@ -163,11 +165,11 @@ obj-test/%.o: test/%.cpp
 	      -e '/^$$/ d' -e 's/$$/ :/' < $(@:%.o=%.d) >> $(@:%.o=%.P); \
 	  rm -f $(@:%.o=%.d)
 
-test_bitcoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+test_memorycoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
 	$(CXX) $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS) $(TESTLIBS)
 
 clean:
-	-rm -f memorycoind test_bitcoin
+	-rm -f memorycoind test_memorycoin
 	-rm -f obj/*.o
 	-rm -f obj-test/*.o
 	-rm -f obj/*.P

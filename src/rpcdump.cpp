@@ -1,9 +1,10 @@
 // Copyright (c) 2009-2012 Bitcoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 
 #include "init.h" // for pwalletMain
-#include "bitcoinrpc.h"
+#include "memorycoinrpc.h"
 #include "ui_interface.h"
 #include "base58.h"
 
@@ -96,7 +97,7 @@ Value importmemorywallet(const Array& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    CBitcoinSecret vchSecret;
+    CMemorycoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strSecret);
 
     if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
@@ -148,7 +149,7 @@ Value importprivkey(const Array& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    CBitcoinSecret vchSecret;
+    CMemorycoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strSecret);
 
     if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
@@ -165,7 +166,7 @@ Value importprivkey(const Array& params, bool fHelp)
         pwalletMain->SetAddressBookName(vchAddress, strLabel);
 
         if (!pwalletMain->AddKey(key))
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet - check to make sure your wallet is unlocked.");
 	
         if (fRescan) {
             pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);
@@ -180,11 +181,11 @@ Value dumpprivkey(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "dumpprivkey <memorycoinaddress>\n"
-            "Reveals the private key corresponding to <memorycoinaddress>.");
+            "dumpprivkey <Memorycoin Address>\n"
+            "Reveals the private key corresponding to <Memorycoin Address>.");
 
     string strAddress = params[0].get_str();
-    CBitcoinAddress address;
+    CMemorycoinAddress address;
     if (!address.SetString(strAddress))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid MemoryCoin address");
     CKeyID keyID;
@@ -194,5 +195,5 @@ Value dumpprivkey(const Array& params, bool fHelp)
     bool fCompressed;
     if (!pwalletMain->GetSecret(keyID, vchSecret, fCompressed))
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
-    return CBitcoinSecret(vchSecret, fCompressed).ToString();
+    return CMemorycoinSecret(vchSecret, fCompressed).ToString();
 }

@@ -1,6 +1,8 @@
-# Copyright (c) 2009-2010 Satoshi Nakamoto
+# Copyright (c) 2010 Satoshi Nakamoto
+# Copyright (c) 2009-2012 The Bitcoin developers
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2013-2014 Memorycoin Dev Team
 
 # Makefile for the MinGW g++ compiler/toolchain
 #
@@ -84,7 +86,7 @@ OBJS= \
     obj/momentum.o \
     obj/net.o \
     obj/protocol.o \
-    obj/bitcoinrpc.o \
+    obj/memorycoinrpc.o \
     obj/rpcdump.o \
     obj/rpcnet.o \
     obj/rpcmining.o \
@@ -105,8 +107,8 @@ OBJS= \
 
 all: memorycoind.exe
 
-test check: test_bitcoin.exe FORCE
-	test_bitcoin.exe
+test check: test_memorycoin.exe FORCE
+	test_memorycoin.exe
 
 #
 # LevelDB support
@@ -128,11 +130,11 @@ TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
 obj-test/%.o: test/%.cpp $(HEADERS)
 	$(CXX) -c $(TESTDEFS) $(CFLAGS) -o $@ $<
 
-test_bitcoin.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+test_memorycoin.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
 	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(LIBPATHS) $^ -lboost_unit_test_framework$(BOOST_SUFFIX) $(LIBS)
 
 clean:
-	rm -f memorycoind.exe test_bitcoin.exe
+	rm -f memorycoind.exe test_memorycoin.exe
 	rm -f obj/*
 	rm -f obj-test/*
 	cd leveldb && $(MAKE) TARGET_OS=NATIVE_WINDOWS clean && cd ..

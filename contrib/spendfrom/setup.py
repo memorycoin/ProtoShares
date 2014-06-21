@@ -1,9 +1,9 @@
 from distutils.core import setup
-setup(name='btcspendfrom',
-      version='1.0',
+setup(name='MMCspendfrom',
+      version='1.0.1',
       description='Command-line utility for bitcoin "coin control"',
-      author='Gavin Andresen',
-      author_email='gavin@bitcoinfoundation.org',
+      author='Memorycoin Dev Team',
+      author_email='admins@mmc-square.com',
       requires=['jsonrpc'],
       scripts=['spendfrom.py'],
       )

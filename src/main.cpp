@@ -2,6 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #ifdef QT_CORE_LIB
 #include <QtGlobal>
 #ifdef Q_OS_MAC // if mac
@@ -41,6 +42,7 @@ using namespace boost;
 // Global state
 //
 static int DIFFICULTYKIMOTOFORKHEIGHT = 606;
+static int V3FORKHEIGHT = 50000;
 //static int DIFFICULTYKIMOTOFORKHEIGHT = 750;
 
 CCriticalSection cs_setpwalletRegistered;
@@ -1126,8 +1128,11 @@ int64 static GetGrantValue(int64 nHeight)
 }
 
 static const int64 nTargetTimespan = 60 * 60 * 2; // adjust difficulty based on the past 2 hours
-static const int64 nTargetSpacing = 6 * 60; // five minutes
+static const int64 nNewTargetSpacing = 8 * 60; // eight minutes
+static const int64 nTargetSpacing = 6 * 60; // six minutes
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
+static const int64 nDiffWindow = 20; // two hours
+static const int64 nLifeWindow = 40; // four hours
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -1223,6 +1228,100 @@ BlockCreating = BlockCreating;
     return bnNew.GetCompact();
 }
 
+int64 AbsTime(int64 t0, int64 t1)
+{
+    if (t0 > t1)
+        return t0 - t1;
+    else
+        return t1 - t0;
+}
+
+// Temporal retargeting - from Heavycoin
+unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
+	static CBigNum bnCurr;
+    CBigNum bnLast;
+    bnLast.SetCompact(pindexLast->nBits);
+
+    if (bnCurr == 0)
+        bnCurr = bnLast;
+
+    // Use measurements over last 4 hours
+    unsigned int i;
+    CBigNum bnNew = 0;
+    unsigned int count = 0;
+    int64 now = (int64)pblock->nTime; // Can be out by 2hrs
+    const CBlockIndex* pindexFirst = pindexLast;
+    for (i = 0; pindexFirst && pindexFirst->pprev &&
+         now - pindexFirst->GetBlockTime() < nLifeWindow * nNewTargetSpacing; i++) {
+        if (*pindexFirst->pprev->phashBlock == hashGenesisBlock) {
+                static int logged1;
+                if (!logged1) {
+                    printf("Avoiding retarget against genesis block\n");
+                    logged1 = 1;
+                }
+                break;
+        }
+
+        if (count < nDiffWindow) {
+            CBigNum bnDiff;
+            bnDiff.SetCompact(pindexFirst->nBits);
+            int64 nTime = AbsTime(pindexFirst->GetBlockTime(), pindexFirst->pprev->GetBlockTime());
+
+            // Adjusted difficulty
+            bnDiff *= nTime;
+            bnDiff /= nNewTargetSpacing;
+            bnNew += bnDiff;
+            count++;
+        }
+
+        pindexFirst = pindexFirst->pprev;
+    }
+
+    if (!count) {
+        printf("Retarget: Bumping count = 1\n");
+        bnNew = bnProofOfWorkLimit;
+        count = 1;
+    }
+    bnNew /= count;
+
+    // Heavycoin Temporal Retargeting - exits "blackhole" in ~3hrs
+    if (pindexLast->nHeight > nLifeWindow && count < nLifeWindow/4) {
+        int min = nLifeWindow/4 - count;
+        printf("Retarget: **** Heavycoin Temporal Retargeting **** %d/%d : factor = %d\n",
+               count, (int)nLifeWindow/4, (int)pow(2.0f, min));
+
+        bnNew *= (int)pow(2.0f, min);
+
+        printf("Retarget: heal = %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+    }
+    else {
+        // Soft limit
+        if (bnNew < bnLast/2)
+            bnNew = bnLast/2;
+        else if (bnNew > 4*bnLast)
+            bnNew = 4*bnLast;
+    }
+
+    // Hard limit
+    if (bnNew > bnProofOfWorkLimit)
+        bnNew = bnProofOfWorkLimit;
+
+    // Only retarget every nInterval blocks on difficulty increase
+    if (bnNew < bnLast && (pindexLast->nHeight + 1) % nInterval != 0) {
+        // Sample the current block time over more blocks before
+        // increasing the difficulty.
+
+        return pindexLast->nBits;
+    }
+
+    if (bnCurr.GetCompact() != bnNew.GetCompact()) {
+        printf("Retarget: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+        bnCurr = bnNew;
+    }
+
+    return bnCurr.GetCompact();
+}
+
 unsigned int static NeoGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     static const int64 BlocksTargetSpacing = 6 * 60; // 6 minutes
@@ -1314,7 +1413,9 @@ unsigned int static OldGetNextWorkRequired(const CBlockIndex* pindexLast, const 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     assert(pindexLast);
- 
+	if(pindexLast->nHeight > V3FORKHEIGHT) {
+		return TemporalGetNextWorkRequired(pindexLast, pblock);
+	}
     if (pindexLast->nHeight > DIFFICULTYKIMOTOFORKHEIGHT) {
         return NeoGetNextWorkRequired(pindexLast, pblock);
     } else {
@@ -1848,7 +1949,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 void ThreadScriptCheck() {
-    RenameThread("bitcoin-scriptch");
+    RenameThread("memorycoin-scriptch");
     scriptcheckqueue.Thread();
 }
 
@@ -1975,7 +2076,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 		for (unsigned int j = 0; j <vtx[0].vout.size(); j++){
 			CTxDestination address;
 			ExtractDestination(vtx[0].vout[j].scriptPubKey,address);
-			string receiveAddress=CBitcoinAddress(address).ToString().c_str();
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
 			int64 theAmount=vtx[0].vout[j].nValue;
 			//printf("Compare %llu, %llu\n",theAmount,gait->second);
 			//printf("Compare %s, %s\n",receiveAddress.c_str(),gait->first.c_str());
@@ -4370,7 +4471,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// BitcoinMiner
+// MemorycoinMiner
 //
 
 int static FormatHashBlocks(void* pbuffer, unsigned int len)
@@ -4504,7 +4605,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	txNew.vout.resize(genesisBalances.size()+1);
 	for(balit=genesisBalances.begin(); balit!=genesisBalances.end(); ++balit){
 		//printf("gb:%s,%llu",balit->first.c_str(),balit->second);
-		CBitcoinAddress address(balit->first);
+		CMemorycoinAddress address(balit->first);
 		txNew.vout[i].scriptPubKey.SetDestination( address.Get() );
 		txNew.vout[i].nValue = balit->second;
 		total=total+balit->second;
@@ -4528,7 +4629,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
 		printf("Add %s %llu\n",gait->first.c_str(),gait->second);
 	
-		CBitcoinAddress address(gait->first);
+		CMemorycoinAddress address(gait->first);
 		txNew.vout[i+1].scriptPubKey.SetDestination( address.Get() );
 		txNew.vout[i+1].nValue = gait->second;
 		i++;		
@@ -4885,7 +4986,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 
 
-void static BitcoinMiner(CWallet *pwallet, unsigned int randStartNonce)
+void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 {
     printf("MemoryCoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
@@ -5147,7 +5248,7 @@ void LaunchPoolMiner(){
 
 static boost::thread_group* minerThreads = NULL;
 
-void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
+void GenerateMemorycoins(bool fGenerate, CWallet* pwallet)
 {
 	if(fGenerate==false){
 		nThreads=0;
@@ -5164,8 +5265,8 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 		//Mining was switched off, switch on
 		srand (time(NULL));
 		minerThreads = new boost::thread_group();
-		minerThreads->create_thread(boost::bind(&BitcoinMiner, pwallet, rand()));
-		//minerThreads->create_thread(boost::bind(&BitcoinPoolMiner, 8, "Mtest"));
+		minerThreads->create_thread(boost::bind(&MemorycoinMiner, pwallet, rand()));
+		//minerThreads->create_thread(boost::bind(&MemorycoinPoolMiner, 8, "Mtest"));
 		
 		//minerThreads->create_thread(boost::bind(&start, 8, "MRU4YmiS4wYZAQ8RDtxx8hPHauaa4RPyHF"));
 		//start(8, "MRU4YmiS4wYZAQ8RDtxx8hPHauaa4RPyHF");
@@ -5260,9 +5361,10 @@ public:
 
 //Grant award once every two hours - every 20 blocks
 static const int64 GRANTBLOCKINTERVAL = (2*60*60)/nTargetSpacing;
-
-
+static const int64 GRANTBLOCKINTERVALNEW = 180; // 1 day
 static string GRANTPREFIX ="MVTE";
+static string GRANTPREFIXNEW = "MMC";
+
 static int numberOfOffices = 6;
 string electedOffices[7];
 //= {"ceo","cto","cno","cmo","cso","cha","XFT"};
@@ -5309,7 +5411,7 @@ int64 getNUMBEROFAWARDS(int64 blockNumber){
 }
 
 bool isGrantAwardBlock(int64 nHeight){
-	if(nHeight%GRANTBLOCKINTERVAL ==0 && nHeight!=0 && nHeight!=GRANTBLOCKINTERVAL){
+	if(nHeight % (nHeight > V3FORKHEIGHT ? GRANTBLOCKINTERVALNEW : GRANTBLOCKINTERVAL) == 0 && nHeight != 0 && nHeight != GRANTBLOCKINTERVAL){
 		return true;
 	}
 	return false;	
@@ -5484,13 +5586,13 @@ int64 getGrantDatabaseBlockHeight(){
 }
 
 
-int getOfficeNumberFromAddress(string grantVoteAddress){
-	if (!startsWith(grantVoteAddress.c_str(),GRANTPREFIX.c_str())){
+int getOfficeNumberFromAddress(string grantVoteAddress, int64 nHeight){
+	if (!startsWith(grantVoteAddress.c_str(),(nHeight > V3FORKHEIGHT ? GRANTPREFIXNEW : GRANTPREFIX).c_str())){
 		return -1;
 	}
     for(int i=0;i<numberOfOffices+1;i++){
 		//printf("substring %s\n",grantVoteAddress.substr(4,3).c_str());
-		if(grantVoteAddress.substr(4,3)==electedOffices[i]){
+		if(grantVoteAddress.substr(nHeight > V3FORKHEIGHT ? 3 : 4,3)==electedOffices[i]){
 			return i;
 		}
 	}
@@ -5553,14 +5655,14 @@ void processNextBlockIntoGrantDatabase(){
 			CTxDestination address;
 			ExtractDestination(block.vtx[i].vout[j].scriptPubKey,address);
 			
-			string receiveAddress=CBitcoinAddress(address).ToString().c_str();
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
 			int64 theAmount=block.vtx[i].vout[j].nValue;
 			
 			//Update balance - if no previous balance, should start at 0
 			balances[receiveAddress]=balances[receiveAddress]+theAmount;				
 			
 			//Note any voting preferences made in the outputs
-			if(startsWith(receiveAddress.c_str(),GRANTPREFIX.c_str()) && theAmount<10 && theAmount>0){
+			if(startsWith(receiveAddress.c_str(),(gdBlockPointer->nHeight > V3FORKHEIGHT ? GRANTPREFIXNEW : GRANTPREFIX).c_str()) && theAmount<10 && theAmount>0){
 				//printf("Vote found Amount: %llu\n",theAmount);
 				//Voting output - if the same address is voted a number of times in the same transaction, only the last one is counted
 				votes[receiveAddress]=theAmount;
@@ -5577,7 +5679,7 @@ void processNextBlockIntoGrantDatabase(){
 				GetTransaction(block.vtx[i].vin[j].prevout.hash,txPrev,hashBlock);
 				CTxDestination source;
 				ExtractDestination(txPrev.vout[block.vtx[i].vin[j].prevout.n].scriptPubKey,source);			
-				string spendAddress=CBitcoinAddress(source).ToString().c_str();
+				string spendAddress=CMemorycoinAddress(source).ToString().c_str();
 				int64 theAmount=txPrev.vout[block.vtx[i].vin[j].prevout.n].nValue;
 				
 				//Reduce balance
@@ -5587,7 +5689,7 @@ void processNextBlockIntoGrantDatabase(){
 				for(votesit=votes.begin(); votesit!=votes.end(); ++votesit){
                     printf("Vote found: %s, %llu\n",votesit->first.c_str(),votesit->second);
 					string grantVoteAddress=(votesit->first);
-					int electedOfficeNumber = getOfficeNumberFromAddress(grantVoteAddress);
+					int electedOfficeNumber = getOfficeNumberFromAddress(grantVoteAddress, gdBlockPointer->nHeight);
 					if(electedOfficeNumber>-1){
                         printf("Vote added: %d %s, %llu\n",electedOfficeNumber,votesit->first.c_str(),votesit->second);
                         votingPreferences[electedOfficeNumber][spendAddress][votesit->second] = grantVoteAddress;

@@ -1,11 +1,12 @@
 /*
- * Qt4 bitcoin GUI.
+ * Qt4 memorycoin GUI.
  *
  * W.J. van der Laan 2011-2012
  * The Bitcoin Developers 2011-2013
+ * Copyright (c) 2013-2014 Memorycoin Dev Team
  */
 #include "walletframe.h"
-#include "bitcoingui.h"
+#include "memorycoingui.h"
 #include "walletstack.h"
 
 #include <QVBoxLayout>
@@ -13,7 +14,7 @@
 
 #include <stdio.h>
 
-WalletFrame::WalletFrame(BitcoinGUI *_gui) :
+WalletFrame::WalletFrame(MemorycoinGUI *_gui) :
     QFrame(_gui),
     gui(_gui),
     clientModel(0)
@@ -22,7 +23,7 @@ WalletFrame::WalletFrame(BitcoinGUI *_gui) :
     QHBoxLayout *walletFrameLayout = new QHBoxLayout(this);
     setContentsMargins(0,0,0,0);
     walletStack = new WalletStack(this);
-    walletStack->setBitcoinGUI(gui);
+    walletStack->setMemorycoinGUI(gui);
     walletFrameLayout->setContentsMargins(0,0,0,0);
     walletFrameLayout->addWidget(walletStack);
 }

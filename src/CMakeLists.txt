@@ -18,7 +18,7 @@ set(DAEMON_SOURCES
 	wallet.cpp
 	keystore.cpp
 	momentum.cpp
-	bitcoinrpc.cpp
+	memorycoinrpc.cpp
 	rpcdump.cpp
 	rpcnet.cpp
 	rpcmining.cpp

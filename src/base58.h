@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin Developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 
 //
 // Why base-58 instead of standard base-64 encoding?
@@ -12,8 +12,8 @@
 // - E-mail usually won't line-break if there's no punctuation to break at.
 // - Double-clicking selects the whole number as one word if it's all alphanumeric.
 //
-#ifndef BITCOIN_BASE58_H
-#define BITCOIN_BASE58_H
+#ifndef MEMORYCOIN_BASE58_H
+#define MEMORYCOIN_BASE58_H
 
 #include <string>
 #include <vector>
@@ -264,25 +264,25 @@ public:
     bool operator> (const CBase58Data& b58) const { return CompareTo(b58) >  0; }
 };
 
-/** base58-encoded Bitcoin addresses.
+/** base58-encoded Memorycoin addresses.
  * Public-key-hash-addresses have version 0 (or 111 testnet).
  * The data vector contains RIPEMD160(SHA256(pubkey)), where pubkey is the serialized public key.
  * Script-hash-addresses have version 5 (or 196 testnet).
  * The data vector contains RIPEMD160(SHA256(cscript)), where cscript is the serialized redemption script.
  */
-class CBitcoinAddress;
-class CBitcoinAddressVisitor : public boost::static_visitor<bool>
+class CMemorycoinAddress;
+class CMemorycoinAddressVisitor : public boost::static_visitor<bool>
 {
 private:
-    CBitcoinAddress *addr;
+    CMemorycoinAddress *addr;
 public:
-    CBitcoinAddressVisitor(CBitcoinAddress *addrIn) : addr(addrIn) { }
+    CMemorycoinAddressVisitor(CMemorycoinAddress *addrIn) : addr(addrIn) { }
     bool operator()(const CKeyID &id) const;
     bool operator()(const CScriptID &id) const;
     bool operator()(const CNoDestination &no) const;
 };
 
-class CBitcoinAddress : public CBase58Data
+class CMemorycoinAddress : public CBase58Data
 {
 public:
     enum
@@ -305,7 +305,7 @@ public:
 
     bool Set(const CTxDestination &dest)
     {
-        return boost::apply_visitor(CBitcoinAddressVisitor(this), dest);
+        return boost::apply_visitor(CMemorycoinAddressVisitor(this), dest);
     }
 
     bool IsValid() const
@@ -338,21 +338,21 @@ public:
         return fExpectTestNet == fTestNet && vchData.size() == nExpectedSize;
     }
 
-    CBitcoinAddress()
+    CMemorycoinAddress()
     {
     }
 
-    CBitcoinAddress(const CTxDestination &dest)
+    CMemorycoinAddress(const CTxDestination &dest)
     {
         Set(dest);
     }
 
-    CBitcoinAddress(const std::string& strAddress)
+    CMemorycoinAddress(const std::string& strAddress)
     {
         SetString(strAddress);
     }
 
-    CBitcoinAddress(const char* pszAddress)
+    CMemorycoinAddress(const char* pszAddress)
     {
         SetString(pszAddress);
     }
@@ -405,12 +405,12 @@ public:
     }
 };
 
-bool inline CBitcoinAddressVisitor::operator()(const CKeyID &id) const         { return addr->Set(id); }
-bool inline CBitcoinAddressVisitor::operator()(const CScriptID &id) const      { return addr->Set(id); }
-bool inline CBitcoinAddressVisitor::operator()(const CNoDestination &id) const { return false; }
+bool inline CMemorycoinAddressVisitor::operator()(const CKeyID &id) const         { return addr->Set(id); }
+bool inline CMemorycoinAddressVisitor::operator()(const CScriptID &id) const      { return addr->Set(id); }
+bool inline CMemorycoinAddressVisitor::operator()(const CNoDestination &id) const { return false; }
 
 /** A base58-encoded secret key */
-class CBitcoinSecret : public CBase58Data
+class CMemorycoinSecret : public CBase58Data
 {
 public:
     void SetSecret(const CSecret& vchSecret, bool fCompressed)
@@ -458,14 +458,14 @@ public:
         return SetString(strSecret.c_str());
     }
 
-    CBitcoinSecret(const CSecret& vchSecret, bool fCompressed)
+    CMemorycoinSecret(const CSecret& vchSecret, bool fCompressed)
     {
         SetSecret(vchSecret, fCompressed);
     }
 
-    CBitcoinSecret()
+    CMemorycoinSecret()
     {
     }
 };
 
-#endif // BITCOIN_BASE58_H
+#endif // MEMORYCOIN_BASE58_H

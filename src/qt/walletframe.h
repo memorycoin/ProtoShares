@@ -1,15 +1,19 @@
 /*
- * Qt4 bitcoin GUI.
+ * Qt4 memorycoin GUI.
  *
  * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2013
+ * Copyright (c) 2010 Satoshi Nakamoto
+ * Copyright (c) 2009-2012 The Bitcoin developers
+ * Distributed under the MIT/X11 software license, see the accompanying
+ * file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ * Copyright (c) 2013-2014 Memorycoin Dev Team
  */
 #ifndef WALLETFRAME_H
 #define WALLETFRAME_H
 
 #include <QFrame>
 
-class BitcoinGUI;
+class MemorycoinGUI;
 class ClientModel;
 class WalletModel;
 class WalletStack;
@@ -18,7 +22,7 @@ class WalletFrame : public QFrame
 {
     Q_OBJECT
 public:
-    explicit WalletFrame(BitcoinGUI *_gui);
+    explicit WalletFrame(MemorycoinGUI *_gui);
     ~WalletFrame();
 
     void setClientModel(ClientModel *clientModel);
@@ -33,7 +37,7 @@ public:
     void showOutOfSyncWarning(bool fShow);
 
 private:
-    BitcoinGUI *gui;
+    MemorycoinGUI *gui;
     ClientModel *clientModel;
     WalletStack *walletStack;
 

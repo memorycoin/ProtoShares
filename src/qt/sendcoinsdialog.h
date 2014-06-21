@@ -1,3 +1,9 @@
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #ifndef SENDCOINSDIALOG_H
 #define SENDCOINSDIALOG_H
 
@@ -11,10 +17,11 @@ class SendCoinsEntry;
 class SendCoinsRecipient;
 
 QT_BEGIN_NAMESPACE
+
 class QUrl;
 QT_END_NAMESPACE
 
-/** Dialog for sending bitcoins */
+/** Dialog for sending memorycoins */
 class SendCoinsDialog : public QDialog
 {
     Q_OBJECT

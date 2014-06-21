@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+// Copyright (c) 2013-2014 Memorycoin Dev Team
 #include "db.h"
 #include "net.h"
 #include "init.h"
@@ -1204,16 +1204,18 @@ void MapPort(bool)
 // The second name should resolve to a list of seed addresses.
 static const char *strMainNetDNSSeed[][2] = {
 //Churn
+    {"146.185.253.159","146.185.253.159"},
     {"81.17.19.139", "81.17.19.139"},
     {"69.197.161.42", "69.197.161.42"},
     {"109.120.170.136", "109.120.170.136"},
     {"151.236.22.84", "151.236.22.84"},
     {"158.255.208.40", "158.255.208.40"},
     {"151.236.15.106", "151.236.15.106"},
-    {"146.185.173.192", "146.185.173.192"},
     {"109.120.170.136", "109.120.170.136"},
 //Standard
     {"78.46.66.139", "78.46.66.139"},
+    {"54.86.1.26", "54.86.1.26"},
+    {"108.61.133.154","108.61.133.154"},
     {NULL, NULL}
 };
 
@@ -1668,7 +1670,11 @@ bool BindListenPort(const CService &addrBind, string& strError)
     // and enable it by default or not. Try to enable it, if possible.
     if (addrBind.IsIPv6()) {
 #ifdef IPV6_V6ONLY
+#ifdef WIN32
+        setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&nOne, sizeof(int));
+#else
         setsockopt(hListenSocket, IPPROTO_IPV6, IPV6_V6ONLY, (void*)&nOne, sizeof(int));
+#endif
 #endif
 #ifdef WIN32
         int nProtLevel = 10 /* PROTECTION_LEVEL_UNRESTRICTED */;
@@ -1809,7 +1815,7 @@ void StartNode(boost::thread_group& threadGroup)
 bool StopNode()
 {
     printf("StopNode()\n");
-    GenerateBitcoins(false, NULL);
+    GenerateMemorycoins(false, NULL);
     MapPort(false);
     nTransactionsUpdated++;
     if (semOutbound)

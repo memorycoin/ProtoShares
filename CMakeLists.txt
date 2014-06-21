@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 2.8) # Needed for file(COPY ...)
 
-project(MemoryCoin)
+project(Memorycoin)
 
 enable_testing()
 
-set(MAJOR_VERSION 0)
-set(MINOR_VERSION 8)
-set(RELEASE_VERSION 99)
-set(BUILD_VERSION 0)
+set(MAJOR_VERSION 3)
+set(MINOR_VERSION 0)
+set(RELEASE_VERSION 000)
+set(BUILD_VERSION 1)
 
-set(PACKAGE bitcoin)
+set(PACKAGE memorycoin)
 set(VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${RELEASE_VERSION}.${BUILD_VERSION})
 set(host ${CMAKE_SYSTEM} ${CMAKE_SYSTEM_PROCESSOR})
-set(COPYRIGHT "Copyright (c) 2009-2013 Bitcoin Developers.  All Rights Reserved.")
+set(COPYRIGHT "Copyright (c) 2009-2013 Bitcoin Developers, 2013-2014 Memorycoin Dev Team.  All Rights Reserved.")
 set(prefix ${CMAKE_INSTALL_PREFIX})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -53,5 +53,5 @@ if(DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE}
                       ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
 		      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		      COMMENT "Bitcoin API documentation via Doxygen" VERBATIM)
+		      COMMENT "Memorycoin API documentation via Doxygen" VERBATIM)
 endif()

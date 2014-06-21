@@ -1,11 +1,15 @@
 /*
- * Qt4 bitcoin GUI.
+ * Qt4 memorycoin GUI.
  *
  * W.J. van der Laan 2011-2012
- * The Bitcoin Developers 2011-2013
+ * Copyright (c) 2010 Satoshi Nakamoto
+ * Copyright (c) 2009-2012 The Bitcoin developers
+ * Distributed under the MIT/X11 software license, see the accompanying
+ * file COPYING or http://www.opensource.org/licenses/mit-license.php.
+ * Copyright (c) 2013-2014 Memorycoin Dev Team
  */
 #include "walletview.h"
-#include "bitcoingui.h"
+#include "memorycoingui.h"
 #include "transactiontablemodel.h"
 #include "addressbookpage.h"
 #include "sendcoinsdialog.h"
@@ -26,7 +30,7 @@
 #include <QFileDialog>
 #include <QPushButton>
 
-WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
+WalletView::WalletView(QWidget *parent, MemorycoinGUI *_gui):
     QStackedWidget(parent),
     gui(_gui),
     clientModel(0),
@@ -90,7 +94,7 @@ WalletView::~WalletView()
 {
 }
 
-void WalletView::setBitcoinGUI(BitcoinGUI *gui)
+void WalletView::setMemorycoinGUI(MemorycoinGUI *gui)
 {
     this->gui = gui;
 }
@@ -133,7 +137,7 @@ void WalletView::setWalletModel(WalletModel *walletModel)
 
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
-        this->gui->setWindowTitle(tr("MemoryCoin") + " - " + tr("Wallet") + " - " + walletModel->getDefaultWalletAddress().c_str());
+        this->gui->setWindowTitle(tr("Memorycoin") + " - " + tr("Wallet") + " - " + walletModel->getDefaultWalletAddress().c_str());
 
     }
 }
