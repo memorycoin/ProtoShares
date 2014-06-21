@@ -7,7 +7,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleGetInfoString</key>
-        <string>$VERSION, Copyright © 2013-$YEAR The MemoryCoin CTO Developers</string>
+        <string>$VERSION, Copyright © 2013-$YEAR The Memorycoin CTO Developers</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$VERSION</string>
 	<key>CFBundleVersion</key>
@@ -15,16 +15,16 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleExecutable</key>
-	<string>MemoryCoin-Qt</string>
+	<string>Memorycoin-Qt</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.memorycoinfoundation.MemoryCoin-Qt</string>
+	<string>org.memorycoinfoundation.Memorycoin-Qt</string>
         <key>CFBundleURLTypes</key>
         <array>
           <dict>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>CFBundleURLName</key>
-            <string>org.memorycoinfoundation.MemoryCoinPayment</string>
+            <string>org.memorycoinfoundation.MemorycoinPayment</string>
             <key>CFBundleURLSchemes</key>
             <array>
               <string>memorycoin</string>

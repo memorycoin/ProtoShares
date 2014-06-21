@@ -2,6 +2,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2013-2014 Memorycoin Dev Team
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96d6688834f5b5b07c8ad5ad6e1e059d6caf401f
 #include "init.h" // for pwalletMain
 #include "memorycoinrpc.h"
 #include "ui_interface.h"
@@ -165,7 +169,7 @@ Value importprivkey(const Array& params, bool fHelp)
         pwalletMain->SetAddressBookName(vchAddress, strLabel);
 
         if (!pwalletMain->AddKey(key))
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet - check to make sure your wallet is unlocked.");
 	
         if (fRescan) {
             pwalletMain->ScanForWalletTransactions(pindexGenesisBlock, true);

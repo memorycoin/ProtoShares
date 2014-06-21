@@ -1,4 +1,4 @@
-Building MemoryCoin 2.0
+Building MemoryCoin 3.0.0
 
 See doc/readme-qt.rst for instructions on building MemoryCoin-Qt,
 the intended-for-end-users, nice-graphical-interface, reference
@@ -7,3 +7,5 @@ implementation of MemoryCoin.
 See doc/build-*.txt for instructions on building memorycoind,
 the intended-for-services, no-graphical-interface, reference
 implementation of MemoryCoin.
+
+NEW INSTRUCTIONS - to be delivered

@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+# Copyright (c) 2013-2014 Memorycoin Dev Team
 
 import subprocess, sys, re, os, shutil, stat, os.path
 from string import Template
@@ -785,7 +786,7 @@ if config.dmg is not None:
                 items_positions.append(itemscript.substitute(params))
 
         params = {
-            "disk" : "Bitcoin-Qt",
+            "disk" : "Memorycoin-Qt",
             "window_bounds" : "300,300,800,620",
             "icon_size" : "96",
             "background_commands" : "",

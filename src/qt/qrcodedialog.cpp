@@ -1,7 +1,13 @@
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #include "qrcodedialog.h"
 #include "ui_qrcodedialog.h"
 
-#include "bitcoinunits.h"
+#include "memorycoinunits.h"
 #include "guiconstants.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
@@ -93,7 +99,7 @@ QString QRCodeDialog::getURI()
         if (ui->lnReqAmount->validate())
         {
             // even if we allow a non BTC unit input in lnReqAmount, we generate the URI with BTC as unit (as defined in BIP21)
-            ret += QString("?amount=%1").arg(BitcoinUnits::format(BitcoinUnits::BTC, ui->lnReqAmount->value()));
+            ret += QString("?amount=%1").arg(MemorycoinUnits::format(MemorycoinUnits::BTC, ui->lnReqAmount->value()));
             paramCount++;
         }
         else

@@ -1,7 +1,13 @@
+// Copyright (c) 2010 Satoshi Nakamoto
+// Copyright (c) 2009-2012 The Bitcoin developers
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2013-2014 Memorycoin Dev Team
+
 #include "optionsdialog.h"
 #include "ui_optionsdialog.h"
 
-#include "bitcoinunits.h"
+#include "memorycoinunits.h"
 #include "monitoreddatamapper.h"
 #include "netbase.h"
 #include "optionsmodel.h"
@@ -78,7 +84,7 @@ OptionsDialog::OptionsDialog(QWidget *parent) :
         }
     }
 
-    ui->unit->setModel(new BitcoinUnits(this));
+    ui->unit->setModel(new MemorycoinUnits(this));
 
     /* Widget-to-option mapper */
     mapper = new MonitoredDataMapper(this);
@@ -125,7 +131,7 @@ void OptionsDialog::setMapper()
 {
     /* Main */
     mapper->addMapping(ui->transactionFee, OptionsModel::Fee);
-    mapper->addMapping(ui->bitcoinAtStartup, OptionsModel::StartAtStartup);
+    mapper->addMapping(ui->memorycoinAtStartup, OptionsModel::StartAtStartup);
 
     /* Network */
     mapper->addMapping(ui->mapPortUpnp, OptionsModel::MapPortUPnP);

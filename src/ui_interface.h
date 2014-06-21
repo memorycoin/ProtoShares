@@ -3,7 +3,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2013-2014 Memorycoin Dev Team
+<<<<<<< HEAD
 
+=======
+>>>>>>> 96d6688834f5b5b07c8ad5ad6e1e059d6caf401f
 #ifndef MEMORYCOIN_UI_INTERFACE_H
 #define MEMORYCOIN_UI_INTERFACE_H
 

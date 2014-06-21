@@ -161,4 +161,4 @@ public:
     static bool Recover(CDBEnv& dbenv, std::string filename);
 };
 
-#endif // BITCOIN_WALLETDB_H
+#endif // MEMORYCOIN_WALLETDB_H

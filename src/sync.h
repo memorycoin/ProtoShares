@@ -210,5 +210,5 @@ public:
         return fHaveGrant;
     }
 };
-#endif
+#endif //MEMORYCOIN_SYNC_H
 

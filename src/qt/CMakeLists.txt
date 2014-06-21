@@ -1,8 +1,14 @@
+# Copyright (c) 2010 Satoshi Nakamoto
+# Copyright (c) 2009-2012 The Bitcoin developers
+# Distributed under the MIT/X11 software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2013-2014 Memorycoin Dev Team
+
 file(GLOB GUI_FORMS forms/*.ui)
 
 set(GUI_SOURCES
-	bitcoin.cpp
-	bitcoingui.cpp
+	memorycoin.cpp
+	memorycoingui.cpp
 	transactiontablemodel.cpp
 	addresstablemodel.cpp
 	optionsdialog.cpp
@@ -11,7 +17,7 @@ set(GUI_SOURCES
 	signverifymessagedialog.cpp
 	aboutdialog.cpp
 	editaddressdialog.cpp
-	bitcoinaddressvalidator.cpp
+	bmemorycoinaddressvalidator.cpp
 	clientmodel.cpp
 	guiutil.cpp
 	transactionrecord.cpp
@@ -19,8 +25,8 @@ set(GUI_SOURCES
 	monitoreddatamapper.cpp
 	transactiondesc.cpp
 	transactiondescdialog.cpp
-	bitcoinstrings.cpp
-	bitcoinamountfield.cpp
+	memorycoinstrings.cpp
+	memorycoinamountfield.cpp
 	transactionfilterproxy.cpp
 	transactionview.cpp
 	walletmodel.cpp
@@ -31,7 +37,7 @@ set(GUI_SOURCES
 	csvmodelwriter.cpp
 	sendcoinsentry.cpp
 	qvalidatedlineedit.cpp
-	bitcoinunits.cpp
+	memorycoinunits.cpp
 	qvaluecombobox.cpp
 	askpassphrasedialog.cpp
 	notificator.cpp
@@ -59,7 +65,7 @@ add_subdirectory(locale)
 # This is a bit annoying but at least it allows out-of-source 
 # building.  We copy the qrc and resource files to the build 
 # directory to allow rcc to get the relative paths correct.
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bitcoin.qrc DESTINATION
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/memorycoincoin.qrc DESTINATION
 	  ${CMAKE_CURRENT_BINARY_DIR})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/res DESTINATION
@@ -70,11 +76,11 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/locale DESTINATION
 
 # Generate intermediate Qt-specific files from .ui and .h
 qt4_wrap_ui(FORMS_HEADERS ${GUI_FORMS})
-qt4_add_resources(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/bitcoin.qrc)
+qt4_add_resources(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/memorycoin.qrc)
 
 add_library(memorycoinqt
 	${GUI_SOURCES}
-	${BITCOIN_QM_FILES}
+	${MEMORYCOIN_QM_FILES}
 	${FORMS_HEADERS}
 	${RESOURCES_RCC}
 	)
@@ -92,6 +98,6 @@ add_dependencies(memorycoinqt memorycoin_translations)
 
 qt4_use_modules(memorycoinqt Core Gui Network)
 
-add_executable(memorycoin-qt bitcoin.cpp)
+add_executable(memorycoin-qt memorycoin.cpp)
 
 target_link_libraries(memorycoin-qt memorycoinqt)
