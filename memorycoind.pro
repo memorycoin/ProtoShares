@@ -1,6 +1,5 @@
 TEMPLATE = app
 TARGET = memorycoind
-#macx:TARGET = "Memorycoin-Qt"
 VERSION = 2.999.999
 INCLUDEPATH += src src/json 
 QT += network 

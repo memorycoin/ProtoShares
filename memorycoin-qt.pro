@@ -1,7 +1,5 @@
 TEMPLATE = app
 TARGET = memorycoin-qt
-macx:TARGET = "MemoryCoin-Qt"
-VERSION = 0.8.584
 macx:TARGET = "Memorycoin-Qt"
 VERSION = 2.999.999
 INCLUDEPATH += src src/json src/qt

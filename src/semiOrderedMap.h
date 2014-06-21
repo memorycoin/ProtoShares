@@ -1,14 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-<<<<<<< HEAD
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 // Copyright (c) 2013-2014 Memorycoin Dev Team
-=======
-// file COPYING or http://www.opensource.org/licenses/mit-license.php
-// Copyright (c) 2013-2014 Memorycoin Dev Team
 
->>>>>>> 96d6688834f5b5b07c8ad5ad6e1e059d6caf401f
 #include <math.h>
 
 class semiOrderedMap{

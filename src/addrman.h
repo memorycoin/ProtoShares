@@ -7,10 +7,7 @@
 // Copyright (c) 2012 Pieter Wuille
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-<<<<<<< HEAD
 // Copyright (c) 2013-2014 Memorycoin Dev Team
-=======
->>>>>>> 96d6688834f5b5b07c8ad5ad6e1e059d6caf401f
 #ifndef _MEMORYCOIN_ADDRMAN
 #define _MEMORYCOIN_ADDRMAN 1
 
