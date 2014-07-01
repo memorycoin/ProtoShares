@@ -42,7 +42,8 @@ using namespace boost;
 // Global state
 //
 static int DIFFICULTYKIMOTOFORKHEIGHT = 606;
-static int V3FORKHEIGHT = 50000;
+static int V3FORKHEIGHT = 56207;
+//V3 is set to 50 days from now on August 19.
 //static int DIFFICULTYKIMOTOFORKHEIGHT = 750;
 
 CCriticalSection cs_setpwalletRegistered;
