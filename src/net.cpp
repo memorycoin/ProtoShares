@@ -1203,150 +1203,69 @@ void MapPort(bool)
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strMainNetDNSSeed[][2] = {
-//SECTION: SSED CHURN NODES and HIGH-PERFORMANCE NETWORK NODES
-//
-//SECTION: LAST PRIORITY
-//
-	//SECTION: Sensitive MMC-Square Server Churn Nodes
-	//NOTE: These nodes are running p2pool software. (x2 P2Pools)
-	{"108.61.133.154","108.61.133.154"},
-	{"108.61.133.157","108.61.133.157"},
-	//
+//Churn
+    {"146.185.253.159","146.185.253.159"},
+    {"81.17.19.139", "81.17.19.139"},
+    {"69.197.161.42", "69.197.161.42"},
+    {"109.120.170.136", "109.120.170.136"},
+    {"151.236.22.84", "151.236.22.84"},
+    {"158.255.208.40", "158.255.208.40"},
+    {"151.236.15.106", "151.236.15.106"},
+    {"109.120.170.136", "109.120.170.136"},
+//Standard
+    {"78.46.66.139", "78.46.66.139"},
+    {"54.86.1.26", "54.86.1.26"},
+    {"108.61.133.154","108.61.133.154"},
     {NULL, NULL}
 };
 
-static const string strMainNetChurnNodesNonDefault[] = {
-	//SECTION: Mmc-square Churn Performance Nodes (10)
-	//
-	//NOTE: Maintained by MMC Dev. Team
-    "108.61.133.157:1969",
-    "108.61.133.157:1970",
-	"108.61.133.157:1971",
-	"108.61.133.157:1972",
-    "108.61.133.157:1973",
-    "108.61.133.157:1974",
-    "108.61.133.157:1975",
-    "108.61.133.157:1976",
-    "108.61.133.157:1977",
-    "108.61.133.157:1978",
-	//SECTION: Santana.mmc-square Churn Performance Nodes (10)
-	//
-	//NOTE: Maintained by MMC Dev. Team
-    "108.61.133.154:1969",
-    "108.61.133.154:1970",
-    "108.61.133.154:1971",
-    "108.61.133.154:1972",
-    "108.61.133.154:1973",
-    "108.61.133.154:1974",
-    "108.61.133.154:1975",
-    "108.61.133.154:1976",
-    "108.61.133.154:1977",
-    "108.61.133.154:1978"
-};
-
-static const string strMainNetStandardNodesNonDefault[] = {
-//SECTION: Standard Nodes: For normal network usage
-//
-	//SECTION: Santana.mmc-square (Spicy) Standard Performance Nodes (10)
-	//
-	"108.61.133.154:1979",
-	"108.61.133.154:1980", 
-	"108.61.133.154:1981", 
-	"108.61.133.154:1982", 
-	"108.61.133.154:1983", 
-	"108.61.133.154:1984", 
-	"108.61.133.154:1985", 
-	"108.61.133.154:1986", 
-	"108.61.133.154:1987", 
-	"108.61.133.154:1988" 
-	};
 static const char *strTestNetDNSSeed[][2] = {
-    // {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
-    // {"bluematt.me", "testnet-seed.bluematt.me"},
+    {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
+    {"bluematt.me", "testnet-seed.bluematt.me"},
     {NULL, NULL}
 };
 
-//SECTION: SEED [Churn] Nodes that are non default:
-//
 void ThreadDNSAddressSeed()
 {
-	if (!fTestNet){
-		static const char *(*strDNSSeed)[2] = fTestNet ? strTestNetDNSSeed : strMainNetDNSSeed;
-		
-		int found = 0;
+    static const char *(*strDNSSeed)[2] = fTestNet ? strTestNetDNSSeed : strMainNetDNSSeed;
 
-		printf("Loading addresses from DNS seeds (Could take a moment...)\n");
+    int found = 0;
 
-		for (
-			unsigned int seed_idx = 0;
-			strDNSSeed[seed_idx][0] != NULL;
-			seed_idx++ ) 
-		{
-			if (HaveNameProxy()) {
-				AddOneShot(strDNSSeed[seed_idx][1]);
-			} else {
-				vector<CNetAddr> vaddr;
-				vector<CAddress> vAdd;
-				if (LookupHost(strDNSSeed[seed_idx][1], vaddr))
-				{
-					BOOST_FOREACH(CNetAddr& ip, vaddr)
-					{
-						int nOneDay = 86400;
-						CAddress addr = CAddress(CService(ip, GetDefaultPort()));
-						addr.nTime = GetTime() - 1*nOneDay - GetRand(6*nOneDay); // use a random age between 1 and 6 days old
-						vAdd.push_back(addr);
-						found++;
-					}
-				}
-				addrman.Add(vAdd, CNetAddr(strDNSSeed[seed_idx][0], true));
-			}
-		}
-	}
+    printf("Loading addresses from DNS seeds (could take a while)\n");
+
+    for (unsigned int seed_idx = 0; strDNSSeed[seed_idx][0] != NULL; seed_idx++) {
+        if (HaveNameProxy()) {
+            AddOneShot(strDNSSeed[seed_idx][1]);
+        } else {
+            vector<CNetAddr> vaddr;
+            vector<CAddress> vAdd;
+            if (LookupHost(strDNSSeed[seed_idx][1], vaddr))
+            {
+                BOOST_FOREACH(CNetAddr& ip, vaddr)
+                {
+                    int nOneDay = 24*3600;
+                    CAddress addr = CAddress(CService(ip, GetDefaultPort()));
+                    addr.nTime = GetTime() - 3*nOneDay - GetRand(4*nOneDay); // use a random age between 3 and 7 days old
+                    vAdd.push_back(addr);
+                    found++;
+                }
+            }
+            addrman.Add(vAdd, CNetAddr(strDNSSeed[seed_idx][0], true));
+        }
+    }
+
+    printf("%d addresses found from DNS seeds\n", found);
 }
 
-void ThreadDNSAddressSeedNonDefault()
-{
-	if (!fTestNet){
 
-		int found = 0;
 
-		printf("Loading addresses from Non-Standard DNS seeds... \n Amount of Addresses to load:[%d] \n", sizeof(strMainNetChurnNodesNonDefault)/sizeof(*strMainNetChurnNodesNonDefault));
 
-		for (unsigned int seed_idx = 0;
-			(sizeof(strMainNetChurnNodesNonDefault)/sizeof(*strMainNetChurnNodesNonDefault)-1) >= seed_idx;
-			seed_idx++) 
-		{
-			if (HaveNameProxy()) {
-				AddOneShot(strMainNetChurnNodesNonDefault[seed_idx]);
-			} else {
-				string ip_address = strMainNetChurnNodesNonDefault[seed_idx].substr( 0 , strMainNetChurnNodesNonDefault[seed_idx].find(":") ).c_str();
-				unsigned short port_int = (unsigned short) atoi(strMainNetChurnNodesNonDefault[seed_idx].substr( strMainNetChurnNodesNonDefault[seed_idx].find(":") + 1 ).c_str());
-				string port_str = strMainNetChurnNodesNonDefault[seed_idx].substr( strMainNetChurnNodesNonDefault[seed_idx].find(":") + 1).c_str();
 
-				vector<CNetAddr> vaddr;
-				vector<CAddress> vAdd;
-				if (LookupHost( (const char*) ip_address.c_str(), vaddr))
-				{
-					BOOST_FOREACH(CNetAddr& ip, vaddr)
-					{
-						int nOneDay = 86400;
-						
-						CAddress addr = CAddress(CService(ip, port_int ) );
-						addr.nTime = GetTime() - 7*nOneDay - GetRand(14*nOneDay); // use a random age between 14 and 28 days old
-						vAdd.push_back(addr);
-						
-						//printf("Added Churn Node %s on port %s.\n", ip_address.c_str(), port_str.c_str() );
-						found++; 
-					}
-				}
-				addrman.Add(vAdd, CNetAddr( ip_address.c_str(), true) );
-			}
-		}
 
-		//printf("%d addresses found from DNS seeds\n", found);
-		
-	}
-}
+
+
+
+
 
 
 unsigned int pnSeed[] =
@@ -1492,51 +1411,6 @@ void ThreadOpenConnections()
             OpenNetworkConnection(addrConnect, &grant);
     }
 }
-
-void ThreadConnectStandardNodeConnections()
-{
-	if (!fTestNet){
-
-		int found = 0;
-
-		printf("Loading addresses from Non-Standard Nodes... \n Amount of Addresses to load:[%d] \n", sizeof(strMainNetStandardNodesNonDefault)/sizeof(*strMainNetStandardNodesNonDefault));
-
-		for (unsigned int seed_idx = 0;
-			(sizeof(strMainNetStandardNodesNonDefault)/sizeof(*strMainNetStandardNodesNonDefault)-1) >= seed_idx;
-			seed_idx++) 
-		{
-			if (HaveNameProxy()) {
-				AddOneShot(strMainNetStandardNodesNonDefault[seed_idx]);
-			} else {
-				string ip_address = strMainNetStandardNodesNonDefault[seed_idx].substr( 0 , strMainNetStandardNodesNonDefault[seed_idx].find(":") ).c_str();
-				unsigned short port_int = (unsigned short) atoi(strMainNetStandardNodesNonDefault[seed_idx].substr( strMainNetStandardNodesNonDefault[seed_idx].find(":") + 1 ).c_str());
-				string port_str = strMainNetStandardNodesNonDefault[seed_idx].substr( strMainNetStandardNodesNonDefault[seed_idx].find(":") + 1).c_str();
-
-				vector<CNetAddr> vaddr;
-				vector<CAddress> vAdd;
-				if (LookupHost( (const char*) ip_address.c_str(), vaddr))
-				{
-					BOOST_FOREACH(CNetAddr& ip, vaddr)
-					{
-						int nOneDay = 86400;
-						
-						CAddress addr = CAddress(CService(ip, port_int ) );
-						addr.nTime = GetTime() - 7*nOneDay - GetRand(14*nOneDay); // use a random age between 14 and 28 days old
-						vAdd.push_back(addr);
-						
-						printf("Added Node %s on port %s.\n", ip_address.c_str(), port_str.c_str() );
-						found++; 
-					}
-				}
-				addrman.Add(vAdd, CNetAddr( ip_address.c_str(), true) );
-			}
-		}
-
-		printf("%d addresses found\n", found);
-		
-	}
-}
-
 
 void ThreadOpenAddedConnections()
 {
@@ -1912,13 +1786,10 @@ void StartNode(boost::thread_group& threadGroup)
     // Start threads
     //
 
-    if (!GetBoolArg("-dnsseed", true)){
+    if (!GetBoolArg("-dnsseed", true))
         printf("DNS seeding disabled\n");
-    }else{
-        //NOTE: Prioritize non-standard ports here for churns -- our port 1968 nodes are running on p2pools.
-        threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeedNonDefault));
-		threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeed));
-	}
+    else
+        threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeed));
 
 #ifdef USE_UPNP
     // Map ports with UPnP
@@ -1930,10 +1801,6 @@ void StartNode(boost::thread_group& threadGroup)
 
     // Initiate outbound connections from -addnode
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addcon", &ThreadOpenAddedConnections));
-   
-	// SECTION: ADD STANDARD NODES
-	//
-	threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addstdnodes", &ThreadConnectStandardNodeConnections));
 
     // Initiate outbound connections
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "opencon", &ThreadOpenConnections));

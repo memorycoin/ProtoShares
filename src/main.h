@@ -46,18 +46,11 @@ static const unsigned int BLOCKFILE_CHUNK_SIZE = 0x1000000; // 16 MiB
 static const unsigned int UNDOFILE_CHUNK_SIZE = 0x100000; // 1 MiB
 /** Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) */
 static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
-
 /** No amount larger than this (in satoshi) is valid */
-//TODO: Increase to accommodate inflationary years.
-/** REMOVE const (Memorycoin v3 */
-static int64 MAX_MONEY = 10000000 * COIN;
+static const int64 MAX_MONEY = 10000000 * COIN;
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
-
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
-
 static const int COINBASE_MATURITY = 60;
-static const int COINBASE_MATURITY_V3 = 30;
-
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 /** Maximum number of script-checking threads allowed */
@@ -112,7 +105,6 @@ extern bool fMultiAddress;
 extern int64 nTransactionFee;
 
 // Minimum disk space required - used in CheckDiskSpace()
-// 50 Megabytes = 5242880
 static const uint64 nMinDiskSpace = 52428800;
 
 
@@ -1157,9 +1149,6 @@ public:
     int SetMerkleBranch(const CBlock* pblock=NULL);
     int GetDepthInMainChain(CBlockIndex* &pindexRet) const;
     int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
-	//NOTE: PASS HEIGHT POINTER
-    int GetDepthInMainChainEx(CBlockIndex* &pindexRet, int* heightOut) const;
-	int GetDepthInMainChainEx(int* heightOut) const { CBlockIndex *pindexRet; return GetDepthInMainChainEx(pindexRet, heightOut); }
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
     bool AcceptToMemoryPool(bool fCheckInputs=true, bool fLimitFree=true);

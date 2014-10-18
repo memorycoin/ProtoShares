@@ -41,25 +41,11 @@ using namespace boost;
 //
 // Global state
 //
+static int DIFFICULTYKIMOTOFORKHEIGHT = 606;
+static int V3FORKHEIGHT = 99999;
+//v3 is postponed. due to FORK ERRORS
+//static int DIFFICULTYKIMOTOFORKHEIGHT = 750;
 
-//DEFINE
-
-static int64 nInflationRateTbl[51];
-static int64 nGrantInflationRateTbl[51];
-static int64 nInflationRateTblFix[51];
-
-static int64 nMaxMoneyTbl[52];
-
-static int64 nForkrateTbl[10];
-static int64 nForkGrantrateTbl[10];
-
-static int64 nV2rateTbl[44];
-static int64 nV2grantrateTbl[44];
-
-static int64 nInitialBlocksRateTbl[240];
-static int64 nInitialBlocksGrantTbl[12];
-
-static const int V3FORKHEIGHT = 73920;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
@@ -117,7 +103,7 @@ int nThreads =0;
 int64 nTransactionFee = 0;
 
 CCriticalSection grantdb;
-
+int64 minimumSubsidy = 02.15*COIN;
 std::map<int, std::string > awardWinners;
 std::map<std::string,int64 > grantAwards;
 std::map<std::string,int64>::iterator gait;
@@ -468,71 +454,54 @@ bool CTransaction::AreInputsStandard(CCoinsViewCache& mapInputs) const
     if (IsCoinBase())
         return true; // Coinbases don't use vin normally
 
-    for ( unsigned int i = 0; 
-		i < vin.size();
-		i++)
+    for (unsigned int i = 0; i < vin.size(); i++)
     {
-        const CTxOut& prev = GetOutputFor( vin[ i ], mapInputs );
+        const CTxOut& prev = GetOutputFor(vin[i], mapInputs);
 
         vector<vector<unsigned char> > vSolutions;
         txnouttype whichType;
         // get the scriptPubKey corresponding to this input:
         const CScript& prevScript = prev.scriptPubKey;
-        if ( !Solver( prevScript, whichType, vSolutions ) ){
+        if (!Solver(prevScript, whichType, vSolutions))
             return false;
-		}
-		
-        int nArgsExpected = ScriptSigArgsExpected( whichType, vSolutions );
-		
-        if ( nArgsExpected < 0 ){
+        int nArgsExpected = ScriptSigArgsExpected(whichType, vSolutions);
+        if (nArgsExpected < 0)
             return false;
-		}
+
         // Transactions with extra stuff in their scriptSigs are
         // non-standard. Note that this EvalScript() call will
         // be quick, because if there are any operations
         // beside "push data" in the scriptSig the
         // IsStandard() call returns false
         vector<vector<unsigned char> > stack;
-        if ( !EvalScript( stack, vin[ i ].scriptSig, *this, i, false, 0) ){
+        if (!EvalScript(stack, vin[i].scriptSig, *this, i, false, 0))
             return false;
-		}
 
-        if ( whichType == TX_SCRIPTHASH )
+        if (whichType == TX_SCRIPTHASH)
         {
-            if ( stack.empty() ){
+            if (stack.empty())
                 return false;
-			}
-			
             CScript subscript(stack.back().begin(), stack.back().end());
             vector<vector<unsigned char> > vSolutions2;
             txnouttype whichType2;
-            if ( !Solver( subscript, whichType2, vSolutions2 ) ){
+            if (!Solver(subscript, whichType2, vSolutions2))
                 return false;
-			}
-			
-            if ( whichType2 == TX_SCRIPTHASH ){
+            if (whichType2 == TX_SCRIPTHASH)
                 return false;
-			}
-			
+
             int tmpExpected;
-            tmpExpected = ScriptSigArgsExpected( whichType2, vSolutions2 );
-			
-            if (tmpExpected < 0){
-				return false;
-			}
-			
+            tmpExpected = ScriptSigArgsExpected(whichType2, vSolutions2);
+            if (tmpExpected < 0)
+                return false;
             nArgsExpected += tmpExpected;
         }
 
-        if ( stack.size() != (unsigned int)nArgsExpected ){
+        if (stack.size() != (unsigned int)nArgsExpected)
             return false;
-		}
-		
     }
-	
-    return true;
 
-	}
+    return true;
+}
 
 unsigned int CTransaction::GetLegacySigOpCount() const
 {
@@ -666,14 +635,14 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
         {
             // Transactions under 10K are free
             // (about 4500 BTC if made of 50 BTC inputs)
-            if (nBytes < 10000) {
+            if (nBytes < 10000)
                 nMinFee = 0;
-			}
-        }else{
+        }
+        else
+        {
             // Free transaction area
-            if (nNewBlockSize < 27000) {
+            if (nNewBlockSize < 27000)
                 nMinFee = 0;
-			}
         }
     }
 
@@ -688,16 +657,13 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
     // Raise the price as the block approaches full
     if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
     {
-        if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN){
+        if (nNewBlockSize >= MAX_BLOCK_SIZE_GEN)
             return MAX_MONEY;
-		}
-		
         nMinFee *= MAX_BLOCK_SIZE_GEN / (MAX_BLOCK_SIZE_GEN - nNewBlockSize);
     }
 
-    if (!MoneyRange(nMinFee)){
+    if (!MoneyRange(nMinFee))
         nMinFee = MAX_MONEY;
-	}
     return nMinFee;
 }
 
@@ -959,6 +925,9 @@ void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
         vtxid.push_back((*mi).first);
 }
 
+
+
+
 int CMerkleTx::GetDepthInMainChain(CBlockIndex* &pindexRet) const
 {
     if (hashBlock == 0 || nIndex == -1)
@@ -975,9 +944,8 @@ int CMerkleTx::GetDepthInMainChain(CBlockIndex* &pindexRet) const
     // Make sure the merkle branch connects to this block
     if (!fMerkleVerified)
     {
-        if (CBlock::CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex) != pindex->hashMerkleRoot){
+        if (CBlock::CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex) != pindex->hashMerkleRoot)
             return 0;
-		}
         fMerkleVerified = true;
     }
 
@@ -985,54 +953,12 @@ int CMerkleTx::GetDepthInMainChain(CBlockIndex* &pindexRet) const
     return pindexBest->nHeight - pindex->nHeight + 1;
 }
 
-int CMerkleTx::GetDepthInMainChainEx(CBlockIndex* &pindexRet, int* heightOut) const
-{
-    if (hashBlock == 0 || nIndex == -1)
-        return 0;
-
-    // Find the block it claims to be in
-    map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
-    if (mi == mapBlockIndex.end())
-        return 0;
-    CBlockIndex* pindex = (*mi).second;
-    if (!pindex || !pindex->IsInMainChain())
-        return 0;
-
-    // Make sure the merkle branch connects to this block
-    if (!fMerkleVerified)
-    {
-        if (CBlock::CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex) != pindex->hashMerkleRoot){
-            return 0;
-		}
-        fMerkleVerified = true;
-    }
-
-	*heightOut = pindexRet->nHeight;
-
-    return pindexBest->nHeight - pindex->nHeight + 1;
-	
-	//NOTE: pindexBest is current height
-	//NOTE: *heightOut is height of block containing this tx.
-}
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-    if (!IsCoinBase()){
+    if (!IsCoinBase())
         return 0;
-	}
-
-	int height = 0;
-	int depthInMainChain = GetDepthInMainChainEx(&height);
-	
-	//NOTE: pindexBest is current height
-	//NOTE: *heightOut is height of block containing this tx.
-	//NOTE: Coins from V3FORKHEIGHT mature at the same rate. The next block will provide coins that mature at the new rate.
-	if (height > V3FORKHEIGHT){
-		return max(0, (COINBASE_MATURITY) - depthInMainChain);
-	} else {
-		return max(0, (COINBASE_MATURITY_V3) - depthInMainChain);
-	}
-
+    return max(0, (COINBASE_MATURITY+20) - GetDepthInMainChain());
 }
 
 
@@ -1172,450 +1098,42 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
     return pblock->GetHash();
 }
 
-void PopulateRateTables(){
-//printf("Populate Rate Table\n");
-//SECTION: Initial Population of Memorycoin Lookup Tables.
-//
-//SECTION: Supply Tables Population.
-//
-	//SECTION: Initial Supply Table Population
-	//
-	//NOTE: Each block is different. Adding 240 lines to unroll this loop would be a waste of file space. There is a trade-off!
-	if ( nInitialBlocksRateTbl[1] != (int64) 117154811 
-		|| 
-		nInitialBlocksGrantTbl[1] != (int64) 23430962 )
-	{
-		for (int i = 239;
-			i != 0;
-			--i)
-		{ 
-			nInitialBlocksRateTbl[i] = (int64) ( 280 * COIN ) / ( 240 - i );
-			if ( i % 20 == 0 ){
-				nInitialBlocksGrantTbl[ int( i / 20 ) ] = (int64) ( nInitialBlocksRateTbl[i] / 5 );
-			}
-		}
-	}
-	//SECTION: v2 Supply Table Population
-	//
-	//NOTE: There are 44 total weeks of 'faulty' v2 MMC Supply.
-	if (nV2rateTbl[43] != (int64) 3085127078 
-		||
-		nV2grantrateTbl[43] != (int64) 617025415 )
-	{
-		nV2rateTbl[0] = (int64) 28000000000;
-		nV2grantrateTbl[0] = (int64) 5600000000;
-		
-		for (int i = 1;
-			i != 44;
-			i++)
-		{	
-			nV2rateTbl[ (int64)i ] = (int64) ( ( nV2rateTbl[ i - 1 ] * 19 ) / 20 );
-			nV2grantrateTbl[ i ] = (int64) ( nV2rateTbl[ i ] / 5 );
-		//NOTE: C++ Math doesn't like decimal numbers.. The only workaround is to represent 95% by using a fraction.
-			//NOTE: WAS* used for debug purposes.
-			//printf("nV2rateTbl %d: %lld\n",i, nV2rateTbl[i]);
-			//printf("nV2grantrateTbl %d: %lld\n",i, nV2grantrateTbl[i]);
-		}
-	}
-//printf("V2 Tables done.\n V3 Tables...\n");		
-	//SECTION: V3 Supply Table Population
-	//
-	//NOTE: Clustered these values for the remaining EIGHT weeks of the mining schedule.
-	//NOTE: [0] is the reference from V2rateTbl;
-	
-
-	//NOTE: These have been unlooped...
-	if ( nForkrateTbl[7] != (int64) 3366643138 
-		||
-		nForkGrantrateTbl[7] != (int64) 2019985882 )
-	{
-		//40.11760107
-		nForkrateTbl[0] = (int64) 4011760107;
-		
-		//39.12533928
-		nForkrateTbl[1] = (int64) 3912533928;
-		
-		//38.15761992
-		nForkrateTbl[2] = (int64) 3815761992;
-		
-		//37.21383597
-		nForkrateTbl[3] = (int64) 3721383597;
-		
-		//36.29339541
-		nForkrateTbl[4] = (int64) 3629339541;
-		
-		//35.39572086
-		nForkrateTbl[5] = (int64) 3539572086;
-		
-		//34.52024924
-		nForkrateTbl[6] = (int64) 3452024924;
-		
-		//33.66643138
-		nForkrateTbl[7] = (int64) 3366643138;
-		
-		//SECTION - Fork Grant Rates
-		//
-		//These are paid out only three times a day. Or 21 times a week.
-		
-		//26.7450673
-		nForkGrantrateTbl[0] = (int64) 2407056064;
-		
-		//26.0835595
-		nForkGrantrateTbl[1] = (int64) 2347520356;
-		
-		//25.4384132
-		nForkGrantrateTbl[2] = (int64) 2289457195;
-		
-		//24.8092239
-		nForkGrantrateTbl[3] = (int64) 2232830158;
-		
-		//24.1955969
-		nForkGrantrateTbl[4] = (int64) 2177603724;
-		
-		//23.5971472
-		nForkGrantrateTbl[5] = (int64) 2123743251;
-		
-		//23.0134994
-		nForkGrantrateTbl[6] = (int64) 2071214954;
-		
-		//22.4442875
-		nForkGrantrateTbl[7] = (int64) 2019985882;
-	}
-	/*	
-	for (int i=0;i!=10;i++){
-		//NOTE: DEBUG INFORMATION
-		printf("===  WEEK v3:  %d ===\n",i);
-		printf("Total Mined coins added this week: %llu\n",(nForkrateTbl[i]*1260) );
-		printf("Total Grant Coins added this week: %llu\n", (nForkGrantrateTbl[i]*21));
-		printf("Total Supply added this week: %llu\n", ((nForkrateTbl[i]*1260)+(nForkGrantrateTbl[i]*21)));
-		printf("======\n");
-		printf("nForkrateTbl %d: %llu\n",i, nForkrateTbl[i]);
-		printf("nForkGrantrateTbl %d: %llu\n",i, nForkGrantrateTbl[i]);
-		printf("========================\n",i);
-	}
-	*/
-	//SECTION: Inflationary Years Table Population
-	//
-//printf("V3 Tables done.\n Inflation Tables...\n");	
-	if (nInflationRateTbl[50] != (int64) 772311583 
-		|| 
-		nGrantInflationRateTbl[50] != (int64) 2957789042 
-		|| 
-		( nInflationRateTblFix[50] != (int64) nInflationRateTbl[50] + (int64) 28422 ))
-	{
-		nInflationRateTbl[0]   = (int64) 286935286;//2.86935286
-		nInflationRateTbl[1]   = (int64) 292673992;//2.92673992
-		nInflationRateTbl[2]   = (int64) 298527472;//2.98527472
-		nInflationRateTbl[3]   = (int64) 304498021;//3.04498021;
-		nInflationRateTbl[4]   = (int64) 310587982;//3.10587982;
-		nInflationRateTbl[5]   = (int64) 316799742;//3.16799742;
-		nInflationRateTbl[6]   = (int64) 323135736;//3.23135736;
-		nInflationRateTbl[7]   = (int64) 329598451;//3.29598451;
-		nInflationRateTbl[8]   = (int64) 336190420;//3.36190420;
-		nInflationRateTbl[9]   = (int64) 342914229;//3.42914229;
-		nInflationRateTbl[10] = (int64) 349772513;//3.49772513;
-		nInflationRateTbl[11] = (int64) 356767963;//3.56767963;
-		nInflationRateTbl[12] = (int64) 363903323;//3.63903323;
-		nInflationRateTbl[13] = (int64) 371181389;//3.71181389;
-		nInflationRateTbl[14] = (int64) 378605017;//3.78605017;
-		nInflationRateTbl[15] = (int64) 386177117;//3.86177117;
-		nInflationRateTbl[16] = (int64) 393900660;//3.93900660;
-		nInflationRateTbl[17] = (int64) 401778673;//4.01778673;
-		nInflationRateTbl[18] = (int64) 409814246;//4.09814246;
-		nInflationRateTbl[19] = (int64) 418010531;//4.18010531;
-		nInflationRateTbl[20] = (int64) 426370742;//4.26370742;
-		nInflationRateTbl[21] = (int64) 434898157;//4.34898157;
-		nInflationRateTbl[22] = (int64) 443596120;//4.43596120;
-		nInflationRateTbl[23] = (int64) 452468042;//4.52468042;
-		nInflationRateTbl[24] = (int64) 461517403;//4.61517403;
-		nInflationRateTbl[25] = (int64) 470747751;//4.70747751;
-		nInflationRateTbl[26] = (int64) 480162706;//4.80162706;
-		nInflationRateTbl[27] = (int64) 489765960;//4.89765960;
-		nInflationRateTbl[28] = (int64) 499561280;//4.99561280;
-		nInflationRateTbl[29] = (int64) 509552505;//5.09552505;
-		nInflationRateTbl[30] = (int64) 519743555;//5.19743555;
-		nInflationRateTbl[31] = (int64) 530138426;//5.30138426;
-		nInflationRateTbl[32] = (int64) 540741195;//5.40741195;
-		nInflationRateTbl[33] = (int64) 551556019;//5.51556019;
-		nInflationRateTbl[34] = (int64) 562587139;//5.62587139;
-		nInflationRateTbl[35] = (int64) 573838882;//5.73838882;
-		nInflationRateTbl[36] = (int64) 585315660;//5.85315660;
-		nInflationRateTbl[37] = (int64) 597021973;//5.97021973;
-		nInflationRateTbl[38] = (int64) 608962412;//6.08962412;
-		nInflationRateTbl[39] = (int64) 621141661;//6.21141661;
-		nInflationRateTbl[40] = (int64) 633564494;//6.33564494;
-		nInflationRateTbl[41] = (int64) 646235784;//6.46235784;
-		nInflationRateTbl[42] = (int64) 659160500;//6.59160500;
-		nInflationRateTbl[43] = (int64) 672343710;//6.72343710;
-		nInflationRateTbl[44] = (int64) 685790584;//6.85790584;
-		nInflationRateTbl[45] = (int64) 699506395;//6.99506395;
-		nInflationRateTbl[46] = (int64) 713496523;//7.13496523;
-		nInflationRateTbl[47] = (int64) 727766454;//7.27766454;
-		nInflationRateTbl[48] = (int64) 742321783;//7.42321783;
-		nInflationRateTbl[49] = (int64) 757168219;//7.57168219;
-		nInflationRateTbl[50] = (int64) 772311583;//7.72311583;
-		//Grant Values v3
-		//Paid out every 60 blocks or 8 hours.
-		nGrantInflationRateTbl[0]  = (int64) 1098901098;//10.98901098;
-		nGrantInflationRateTbl[1]  = (int64) 1120879120;//11.20879120;
-		nGrantInflationRateTbl[2]  = (int64) 1143296703;//11.43296703;
-		nGrantInflationRateTbl[3]  = (int64) 1166162637;//11.66162637;
-		nGrantInflationRateTbl[4]  = (int64) 1189485890;//11.89485890;
-		nGrantInflationRateTbl[5]  = (int64) 1213275607;//12.13275607;
-		nGrantInflationRateTbl[6]  = (int64) 1237541120;//12.37541120;
-		nGrantInflationRateTbl[7]  = (int64) 1262291942;//12.62291942;
-		nGrantInflationRateTbl[8]  = (int64) 1287537781;//12.87537781;
-		nGrantInflationRateTbl[9]  = (int64) 1313288536;//13.13288536;
-		nGrantInflationRateTbl[10] = (int64) 1339554307;//13.39554307;
-		nGrantInflationRateTbl[11] = (int64) 1366345393;//13.66345393;
-		nGrantInflationRateTbl[12] = (int64) 1393672301;//13.93672301;
-		nGrantInflationRateTbl[13] = (int64) 1421545747;//14.21545747;
-		nGrantInflationRateTbl[14] = (int64) 1449976662;//14.49976662;
-		nGrantInflationRateTbl[15] = (int64) 1478976195;//14.78976195;
-		nGrantInflationRateTbl[16] = (int64) 1508555719;//15.08555719;
-		nGrantInflationRateTbl[17] = (int64) 1538726834;//15.38726834;
-		nGrantInflationRateTbl[18] = (int64) 1569501370;//15.69501370;
-		nGrantInflationRateTbl[19] = (int64) 1600891398;//16.00891398;
-		nGrantInflationRateTbl[20] = (int64) 1632909226;//16.32909226;
-		nGrantInflationRateTbl[21] = (int64) 1665567410;//16.65567410;
-		nGrantInflationRateTbl[22] = (int64) 1698878759;//16.98878759;
-		nGrantInflationRateTbl[23] = (int64) 1732856334;//17.32856334;
-		nGrantInflationRateTbl[24] = (int64) 1767513460;//17.67513460;
-		nGrantInflationRateTbl[25] = (int64) 1802863730;//18.02863730;
-		nGrantInflationRateTbl[26] = (int64) 1838921004;//18.38921004;
-		nGrantInflationRateTbl[27] = (int64) 1875699424;//18.75699424;
-		nGrantInflationRateTbl[28] = (int64) 1913213413;//19.13213413;
-		nGrantInflationRateTbl[29] = (int64) 1951477681;//19.51477681;
-		nGrantInflationRateTbl[30] = (int64) 1990507235;//19.90507235;
-		nGrantInflationRateTbl[31] = (int64) 2030317379;//20.30317379;
-		nGrantInflationRateTbl[32] = (int64) 2070923727;//20.70923727;
-		nGrantInflationRateTbl[33] = (int64) 2112342202;//21.12342202;
-		nGrantInflationRateTbl[34] = (int64) 2154589046;//21.54589046;
-		nGrantInflationRateTbl[35] = (int64) 2197680827;//21.97680827;
-		nGrantInflationRateTbl[36] = (int64) 2241634443;//22.41634443;
-		nGrantInflationRateTbl[37] = (int64) 2286467132;//22.86467132;
-		nGrantInflationRateTbl[38] = (int64) 2332196475;//23.32196475;
-		nGrantInflationRateTbl[39] = (int64) 2378840404;//23.78840404;
-		nGrantInflationRateTbl[40] = (int64) 2426417212;//24.26417212;
-		nGrantInflationRateTbl[41] = (int64) 2474945557;//24.74945557;
-		nGrantInflationRateTbl[42] = (int64) 2524444468;//25.24444468;
-		nGrantInflationRateTbl[43] = (int64) 2574933357;//25.74933357;
-		nGrantInflationRateTbl[44] = (int64) 2626432024;//26.26432024;
-		nGrantInflationRateTbl[45] = (int64) 2678960665;//26.78960665;
-		nGrantInflationRateTbl[46] = (int64) 2732539878;//27.32539878;
-		nGrantInflationRateTbl[47] = (int64) 2787190676;//27.87190676;
-		nGrantInflationRateTbl[48] = (int64) 2842934489;//28.42934489;
-		nGrantInflationRateTbl[49] = (int64) 2899793179;//28.99793179;
-		nGrantInflationRateTbl[50] = (int64) 2957789042;//29.57789042;
-		
-		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0] + 61565;
-		nInflationRateTblFix[1]  = (int64) nInflationRateTbl[1] + 44159;
-		nInflationRateTblFix[2]  = (int64) nInflationRateTbl[2] + 34559;
-		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3] + 64080;
-		nInflationRateTblFix[4]  = (int64) nInflationRateTbl[4] + 27360;
-		nInflationRateTblFix[5]  = (int64) nInflationRateTbl[5] + 4320;
-		nInflationRateTblFix[6]  = (int64) nInflationRateTbl[6] + 59444;
-		nInflationRateTblFix[7]  = (int64) nInflationRateTbl[7] + 42291;
-		nInflationRateTblFix[8]  = (int64) nInflationRateTbl[8] + 44447;
-		nInflationRateTblFix[9]  = (int64) nInflationRateTbl[9] + 6023;
-		nInflationRateTblFix[10] = (int64) nInflationRateTbl[10] + 44146;
-		nInflationRateTblFix[11] = (int64) nInflationRateTbl[11] + 62057;
-		nInflationRateTblFix[12] = (int64) nInflationRateTbl[12] + 14815;
-		nInflationRateTblFix[13] = (int64) nInflationRateTbl[13] + 45256;
-		nInflationRateTblFix[14] = (int64) nInflationRateTbl[14] + 31745;
-		nInflationRateTblFix[15] = (int64) nInflationRateTbl[15] + 54651;
-		nInflationRateTblFix[16] = (int64) nInflationRateTbl[16] + 12501;
-		nInflationRateTblFix[17] = (int64) nInflationRateTbl[17] + 25860;
-		nInflationRateTblFix[18] = (int64) nInflationRateTbl[18] + 56519;
-		nInflationRateTblFix[19] = (int64) nInflationRateTbl[19] + 52406;
-		nInflationRateTblFix[20] = (int64) nInflationRateTbl[20] + 28556;
-		nInflationRateTblFix[21] = (int64) nInflationRateTbl[21] + 18642;
-		nInflationRateTblFix[22] = (int64) nInflationRateTbl[22] + 28189;
-		nInflationRateTblFix[23] = (int64) nInflationRateTbl[23] + 54961;
-		nInflationRateTblFix[24] = (int64) nInflationRateTbl[24] + 45579;
-		nInflationRateTblFix[25] = (int64) nInflationRateTbl[25] + 50423;
-		nInflationRateTblFix[26] = (int64) nInflationRateTbl[26] + 52735;
-		nInflationRateTblFix[27] = (int64) nInflationRateTbl[27] + 61651;
-		nInflationRateTblFix[28] = (int64) nInflationRateTbl[28] + 10472;
-		nInflationRateTblFix[29] = (int64) nInflationRateTbl[29] + 49993;
-		nInflationRateTblFix[30] = (int64) nInflationRateTbl[30] + 57546;
-		nInflationRateTblFix[31] = (int64) nInflationRateTbl[31] + 65248;
-		nInflationRateTblFix[32] = (int64) nInflationRateTbl[32] + 35098;
-		nInflationRateTblFix[33] = (int64) nInflationRateTbl[33] + 29249;
-		nInflationRateTblFix[34] = (int64) nInflationRateTbl[34] + 54733;
-		nInflationRateTblFix[35] = (int64) nInflationRateTbl[35] + 41415;
-		nInflationRateTblFix[36] = (int64) nInflationRateTbl[36] + 18652;
-		nInflationRateTblFix[37] = (int64) nInflationRateTbl[37] + 32131;
-		nInflationRateTblFix[38] = (int64) nInflationRateTbl[38] + 62917;
-		nInflationRateTblFix[39] = (int64) nInflationRateTbl[39] + 14381;
-		nInflationRateTblFix[40] = (int64) nInflationRateTbl[40] + 29083;
-		nInflationRateTblFix[41] = (int64) nInflationRateTbl[41] + 21796;
-		nInflationRateTblFix[42] = (int64) nInflationRateTbl[42] + 1270;
-		nInflationRateTblFix[43] = (int64) nInflationRateTbl[43] + 1295;
-		nInflationRateTblFix[44] = (int64) nInflationRateTbl[44] + 14428;
-		nInflationRateTblFix[45] = (int64) nInflationRateTbl[45] + 59268;
-		nInflationRateTblFix[46] = (int64) nInflationRateTbl[46] + 53901;
-		nInflationRateTblFix[47] = (int64) nInflationRateTbl[47] + 19596;
-		nInflationRateTblFix[48] = (int64) nInflationRateTbl[48] + 25231;
-		nInflationRateTblFix[49] = (int64) nInflationRateTbl[49] + 3459;
-		nInflationRateTblFix[50] = (int64) nInflationRateTbl[50] + 28422;
-	}
-	
-	if (nMaxMoneyTbl[51] != (int64) 2745417896551400){	
-		nMaxMoneyTbl[0]   = (int64) 1000000000000000;
-		nMaxMoneyTbl[1]   = (int64) 1020000000000000;
-		nMaxMoneyTbl[2]   = (int64) 1040000000000000;
-		nMaxMoneyTbl[3]   = (int64) 1061208000000000;
-		nMaxMoneyTbl[4]   = (int64) 1082432160000000;
-		nMaxMoneyTbl[5]   = (int64) 1104080803200000;
-		nMaxMoneyTbl[6]   = (int64) 1126162419264000;
-		nMaxMoneyTbl[7]   = (int64) 1148685667649280;
-		nMaxMoneyTbl[8]   = (int64) 1171659381002270;
-		nMaxMoneyTbl[9]   = (int64) 1195092568622320;
-		nMaxMoneyTbl[10] = (int64) 1218994419994770;
-		nMaxMoneyTbl[11] = (int64) 1243374308394670;
-		nMaxMoneyTbl[12] = (int64) 1268241794562560;
-		nMaxMoneyTbl[13] = (int64) 1293606630453810;
-		nMaxMoneyTbl[14] = (int64) 1319478763062890;
-		nMaxMoneyTbl[15] = (int64) 1345868338324150;
-		nMaxMoneyTbl[16] = (int64) 1372785705090630;
-		nMaxMoneyTbl[17] = (int64) 1400241419192440;
-		nMaxMoneyTbl[18] = (int64) 1428246247576290;
-		nMaxMoneyTbl[19] = (int64) 1456811172527820;
-		nMaxMoneyTbl[20] = (int64) 1485947395978380;
-		nMaxMoneyTbl[21] = (int64) 1515666343897950;
-		nMaxMoneyTbl[22] = (int64) 1545979670775910;
-		nMaxMoneyTbl[23] = (int64) 1576899264191430;
-		nMaxMoneyTbl[24] = (int64) 1608437249475260;
-		nMaxMoneyTbl[25] = (int64) 1640605994464770;
-		nMaxMoneyTbl[26] = (int64) 1673418114354070;
-		nMaxMoneyTbl[27] = (int64) 1706886476641150;
-		nMaxMoneyTbl[28] = (int64) 1741024206173970;
-		nMaxMoneyTbl[29] = (int64) 1775844690297450;
-		nMaxMoneyTbl[30] = (int64) 1811361584103400;
-		nMaxMoneyTbl[31] = (int64) 1847588815785470;
-		nMaxMoneyTbl[32] = (int64) 1884540592101180;
-		nMaxMoneyTbl[34] = (int64) 1960676032022060;
-		nMaxMoneyTbl[33] = (int64) 1922231403943200;
-		nMaxMoneyTbl[35] = (int64) 1999889552662500;
-		nMaxMoneyTbl[36] = (int64) 2039887343715750;
-		nMaxMoneyTbl[37] = (int64) 2080685090590060;
-		nMaxMoneyTbl[38] = (int64) 2122298792401860;
-		nMaxMoneyTbl[39] = (int64) 2164744768249900;
-		nMaxMoneyTbl[40] = (int64) 2208039663614900;
-		nMaxMoneyTbl[41] = (int64) 2252200456887020;
-		nMaxMoneyTbl[42] = (int64) 2297244466024940;
-		nMaxMoneyTbl[43] = (int64) 2343189355345440;
-		nMaxMoneyTbl[44] = (int64) 2390053142452350;
-		nMaxMoneyTbl[45] = (int64) 2437854205301400;
-		nMaxMoneyTbl[46] = (int64) 2486611289407430;
-		nMaxMoneyTbl[47] = (int64) 2536343515195580;
-		nMaxMoneyTbl[48] = (int64) 2587070385499490;
-		nMaxMoneyTbl[49] = (int64) 2638811793209480;
-		nMaxMoneyTbl[50] = (int64) 2691588029073670;
-		nMaxMoneyTbl[51] = (int64) 2745417896551400;
-	}
-	//NOTE: Unable to work with 10 million alone.
-	//uint256 sounds good but I have yet to use it ;)
-	/*for (int i = 0;
-		i != 50;
-		i++)
-	{
-		//nRate = (((nBaseSupply*(1/50)) - (( nBaseSupply * (1/50) )*(3/50))) / 65520);
-		//NOTE: every 8 hours = election block.
-		//NOTE: 1092 election blocks in a year, 6 candidates to split with.
-		//nGrantRate = ( (( (nBaseSupply * (1/50))*(3/50) ) /6 ) / 1092);
-		//nInflationRateTbl[i] = nRate;
-		//nGrantInflationRateTbl[i] = nGrantRate;
-		
-		//NOTE: DEBUG INFORMATION
-		//printf("=== Max Money Supply(v3) %lld=== \n", nMaxMoneyTbl[i]);
-	}*/
-//printf("Inflationary Tables Done.");
-}
-
 int64 static GetBlockSubsidy(int nHeight){
-	//SECTION: SUPPLY
-	//
-		if( nHeight < 240 ) {
-			return (int64) nInitialBlocksRateTbl[ nHeight ];
-		}else if( nHeight < V3FORKHEIGHT ){
-			//SECTION: OLD v2 Parameters
-			// Blocks 240-73919
-			return (int64) nV2rateTbl[ (int)( floor( nHeight / 1680 ) ) ];
-		}else if( nHeight < 84000 ){
-			//SECTION: v3 Parameters
-			// Blocks 73920-84839 (8 weeks)
-			if( nHeight == 83999) {
-				//NOTE: This block will get us  to 10 million.
-				return (int64) nForkrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 ) ) ] + (int64) 7411;	
-			}
-			
-			return (int64) nForkrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 ) ) ];
-			//
-			//NOTE: the code size would increase dramatically vs. years.
-			//NOTE: We are also FLOORING off to the nearest satoshi (8th digit), so the last block of every year will provide the remainder to get to the next year's starting point in supply. Maximum difference of (<0.000655193448) per year when rounding to nearest digit.
-			//NOTE: This is fixed in the birthday block.
-		}else if( nHeight > 83999 ){
-			//NOTE: Blocks 83999 - 3425519
-				//NOTE: Subtract a year and work with it. This should eventually be replaced with a faster method. (High degree of mathematics involved.)
-				//NOTE: Check if it is the last block before the start of the next year.
-				if ( ( ( nHeight - 83999 ) % 65520 ) == 0 ){
-					//NOTE: This is a last block to fix ANY offset in inflation.
-					//NOTE: It's the last block before the start of the new year.
-					return (int64) nInflationRateTblFix[ (int)( floor( ( nHeight - 83999 ) / 65520 ) ) ];
-				}
-				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - 83999 ) / 65520 ) ) ];
-		}else{
-			return false;
-		}
+    
+    //For first two days, have a slowing increasing subsidy
+    if(nHeight<240){
+	return (280*COIN)/(240-nHeight);
+    }
+
+    int64 nSubsidy = 280 * COIN;
+    
+    // Subsidy is reduced by 5% every 1680 blocks, which will occur approximately every 1 week
+    int exponent=(nHeight / 1680);
+    for(int i=0;i<exponent;i++){
+        nSubsidy=nSubsidy*19;
+	nSubsidy=nSubsidy/20;
+    }
+    if(nSubsidy<minimumSubsidy){nSubsidy=minimumSubsidy;}
+    return nSubsidy;
 }
 
-int64 static GetBlockValue( int nHeight, int64 nFees ){
-	return GetBlockSubsidy( nHeight ) + nFees;
+int64 static GetBlockValue(int nHeight, int64 nFees)
+{
+    return GetBlockSubsidy(nHeight) + nFees;
 }
 
-void static SetMaxMoney( int64 BlockHeight ){
-	if( BlockHeight < 84000 ){
-		MAX_MONEY = nMaxMoneyTbl[0];
-	}else if( BlockHeight > 83999 ){
-		MAX_MONEY =  nMaxMoneyTbl[ (int)( 1 + ( floor( ( BlockHeight - 83999 ) / 65520 ) ) ) ];
-	}else{
-		MAX_MONEY =  nMaxMoneyTbl[0];
-	}
-	
-	printf("Set Max Money to $llu", MAX_MONEY);
+int64 static GetGrantValue(int64 nHeight)
+{
+	int64 grantaward=GetBlockSubsidy(nHeight);
+	return grantaward/5;
 }
 
-int64 static GetGrantValue( int64 nHeight ){
-	if ( nHeight > 0 ){
-		if ( nHeight < 240 ){
-			return nInitialBlocksGrantTbl[ (int)( nHeight / 20 ) ];
-		}else if ( nHeight < V3FORKHEIGHT ){
-			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
-		}else if ( nHeight < 84000 ){
-			return nForkGrantrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 )  ) ];
-		}else if ( nHeight > 83999 ){
-			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - 84000 ) / 65520 ) ) ];
-		}
-		//NOTE: This should cover until block 3361679.
-	}
-	return false;
-}
-
-//SECTION: Difficulty Retargeting Options
-//
-//NOTE: These are the timestamps used for difficulty retargeting in seconds.
-static const int64 nV3TargetTimespan = 28800; // 60 * 60 * 8; // V3: Adjust difficulty based on the past 8 blocks
-static const int64 nV3TargetSpacing = 480; // 8 * 60; // V3 Adjustment: 8 minute blocks
-static const int64 nV3Interval = 60; // nV3TargetTimespan / nV3TargetSpacing; // NOTE: Used for difficulty adjustments
-
-//static const int64 nV2TargetTimespan = 7200; // 60*60*2 -- adjust difficulty based on the past 2 hours
-//static const int64 nV2TargetSpacing = 360; // 6* 60 --six minutes (v2)
-//static const int64 nV2Interval = (int64) 20; //NOTE: Used for difficulty adjustments [[nV2TargetTimespan / (int64) 360]]
-
-//static const int64 nDiffWindow = (int64) 20; // two hours
-//static const int64 nLifeWindow = 40; // four hours
+static const int64 nTargetTimespan = 60 * 60 * 2; // adjust difficulty based on the past 2 hours
+static const int64 nNewTargetSpacing = 8 * 60; // eight minutes
+static const int64 nTargetSpacing = 6 * 60; // six minutes
+static const int64 nInterval = nTargetTimespan / nTargetSpacing;
+static const int64 nDiffWindow = 20; // two hours
+static const int64 nLifeWindow = 40; // four hours
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -1624,11 +1142,10 @@ static const int64 nV3Interval = 60; // nV3TargetTimespan / nV3TargetSpacing; //
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
 {
     // Testnet has min-difficulty blocks
-    // after (int64) 360*2 time between blocks:
-    if (fTestNet && nTime > 720){
+    // after nTargetSpacing*2 time between blocks:
+    if (fTestNet && nTime > nTargetSpacing*2)
         return bnProofOfWorkLimit.GetCompact();
-	}
-	
+
     CBigNum bnResult;
     bnResult.SetCompact(nBase);
     while (nTime > 0 && bnResult < bnProofOfWorkLimit)
@@ -1636,14 +1153,14 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
         // Maximum 400% adjustment...
         bnResult *= 4;
         // ... in best-case exactly 4-times-normal target time
-        nTime -= (int64) 28800;
+        nTime -= nTargetTimespan*4;
     }
     if (bnResult > bnProofOfWorkLimit)
         bnResult = bnProofOfWorkLimit;
     return bnResult.GetCompact();
 }
 
-unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
+unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) {
     /* current difficulty formula, Anoncoin - kimoto gravity well */
     const CBlockIndex *BlockLastSolved = pindexLast;
     const CBlockIndex *BlockReading = pindexLast;
@@ -1659,10 +1176,10 @@ BlockCreating = BlockCreating;
     double EventHorizonDeviationFast;
     double EventHorizonDeviationSlow;
 
-    if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < (uint64) 60) { return bnProofOfWorkLimit.GetCompact(); }
+    if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < PastBlocksMin) { return bnProofOfWorkLimit.GetCompact(); }
 	int64 LatestBlockTime = BlockLastSolved->GetBlockTime();
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
-        if ((uint64) 240 > 0 && i >  (uint64) 240) { break; }
+        if (PastBlocksMax > 0 && i > PastBlocksMax) { break; }
         PastBlocksMass++;
 
         if (i == 1) { PastDifficultyAverage.SetCompact(BlockReading->nBits); }
@@ -1674,81 +1191,57 @@ BlockCreating = BlockCreating;
 				LatestBlockTime = BlockReading->GetBlockTime();
 		}
 		PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
-        PastRateTargetSeconds = (uint64) 360 * PastBlocksMass;
+        PastRateTargetSeconds = TargetBlocksSpacingSeconds * PastBlocksMass;
         PastRateAdjustmentRatio = double(1);
-        
-		if( BlockReading->nHeight > 35720 ){
-			if( PastRateActualSeconds < 1 ){
-				PastRateActualSeconds = 1; 
-			}
-		}else{
-			if( PastRateActualSeconds < 0 ){
-				PastRateActualSeconds = 0; 
-			}
+        if(BlockReading->nHeight > 35720) {
+			if(PastRateActualSeconds < 1) { PastRateActualSeconds = 1; }
+		} else {
+			if(PastRateActualSeconds < 0) { PastRateActualSeconds = 0; }
 		}
-		
-        if( PastRateActualSeconds != 0 && PastRateTargetSeconds != 0 ){
-			PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
+        if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
+        PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
         }
-		
-        EventHorizonDeviation = 1 + ( 0.7084 * pow( (double( PastBlocksMass ) / double( 144 ) ), -1.228 ) );
+        EventHorizonDeviation = 1 + (0.7084 * pow((double(PastBlocksMass)/double(144)), -1.228));
         EventHorizonDeviationFast = EventHorizonDeviation;
         EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
 
-        if(PastBlocksMass >= (uint64) 60){
-            if( ( PastRateAdjustmentRatio <= EventHorizonDeviationSlow ) 
-			|| 
-				(PastRateAdjustmentRatio >= EventHorizonDeviationFast) )
-			{
-				assert(BlockReading);
-				
-				break; 
-			}
+        if (PastBlocksMass >= PastBlocksMin) {
+            if ((PastRateAdjustmentRatio <= EventHorizonDeviationSlow) || (PastRateAdjustmentRatio >= EventHorizonDeviationFast)) { assert(BlockReading); break; }
         }
-        
-		if( BlockReading->pprev == NULL ){
-			assert(BlockReading);
-			break;
-		}
-        
-		BlockReading = BlockReading->pprev;
+        if (BlockReading->pprev == NULL) { assert(BlockReading); break; }
+        BlockReading = BlockReading->pprev;
     }
 
-    CBigNum bnNew( PastDifficultyAverage );
-	
-    if( PastRateActualSeconds != 0 && PastRateTargetSeconds != 0 ){
+    CBigNum bnNew(PastDifficultyAverage);
+    if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
         bnNew *= PastRateActualSeconds;
         bnNew /= PastRateTargetSeconds;
     }
-	
-    if( bnNew > bnProofOfWorkLimit ){
-		bnNew = bnProofOfWorkLimit;
-	}
+    if (bnNew > bnProofOfWorkLimit) { bnNew = bnProofOfWorkLimit; }
 
     /// debug print
     //printf("Difficulty Retarget - Kimoto Gravity Well\n");
     //printf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
     //printf("Before: %08x %s\n", BlockLastSolved->nBits, CBigNum().SetCompact(BlockLastSolved->nBits).getuint256().ToString().c_str());
     //printf("After: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
-	
+
+
     return bnNew.GetCompact();
 }
 
 int64 AbsTime(int64 t0, int64 t1)
 {
-    if ( t0 > t1 )
+    if (t0 > t1)
         return t0 - t1;
     else
         return t1 - t0;
 }
-//SECTION: Difficulty Algorithm: Temporal Retargeting
-//
 
-// temp : explanaction of Compact http://bitcoin.stackexchange.com/questions/2924/how-to-calculate-new-bits-value
+// Temporal retargeting - from Heavycoin
 unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
 	static CBigNum bnCurr;
     CBigNum bnLast;
-    bnLast.SetCompact( pindexLast->nBits );
+    bnLast.SetCompact(pindexLast->nBits);
 
     if (bnCurr == 0)
         bnCurr = bnLast;
@@ -1759,172 +1252,186 @@ unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, c
     unsigned int count = 0;
     int64 now = (int64)pblock->nTime; // Can be out by 2hrs
     const CBlockIndex* pindexFirst = pindexLast;
-    for ( i = 0;
-			pindexFirst
-		&& 
-			pindexFirst->pprev
-		&&
-			now - pindexFirst->GetBlockTime() < ( (int64) 40) * nV3TargetSpacing;
-		i++)
-	{
-	//NOTE: This is a loop, as long as 
-        if( *pindexFirst->pprev->phashBlock == hashGenesisBlock )
-		{
+    for (i = 0; pindexFirst && pindexFirst->pprev &&
+         now - pindexFirst->GetBlockTime() < nLifeWindow * nNewTargetSpacing; i++) {
+        if (*pindexFirst->pprev->phashBlock == hashGenesisBlock) {
                 static int logged1;
-                if ( !logged1 ) {
+                if (!logged1) {
                     printf("Avoiding retarget against genesis block\n");
                     logged1 = 1;
                 }
                 break;
         }
 
-        if( count < ( (int64) 20) ){
+        if (count < nDiffWindow) {
             CBigNum bnDiff;
-            bnDiff.SetCompact( pindexFirst->nBits );
-            int64 nTime = AbsTime( pindexFirst->GetBlockTime(), pindexFirst->pprev->GetBlockTime() );
+            bnDiff.SetCompact(pindexFirst->nBits);
+            int64 nTime = AbsTime(pindexFirst->GetBlockTime(), pindexFirst->pprev->GetBlockTime());
+
             // Adjusted difficulty
             bnDiff *= nTime;
-            bnDiff /= nV3TargetSpacing;
+            bnDiff /= nNewTargetSpacing;
             bnNew += bnDiff;
             count++;
         }
+
         pindexFirst = pindexFirst->pprev;
     }
 
-    if( !count ){
+    if (!count) {
         printf("Retarget: Bumping count = 1\n");
         bnNew = bnProofOfWorkLimit;
         count = 1;
     }
     bnNew /= count;
 
-    // SECTION: SOS
-	// Temporal Retargeting - exits "blackhole" in ~3hrs
-    if( pindexLast->nHeight > ( (int64) 40 ) && count < ( (int64) 40) / 4 ){
-        int min = ( (int64) 40 ) /4 - count;
-        printf("Retarget: **** Memorycoin Temporal Retargeting **** %d/%d : factor = %d\n",
-				count,
-				(int)( (int64) 40 ) / 4,
-				(int)pow( 2.0f, min )
-				);
+    // Heavycoin Temporal Retargeting - exits "blackhole" in ~3hrs
+    if (pindexLast->nHeight > nLifeWindow && count < nLifeWindow/4) {
+        int min = nLifeWindow/4 - count;
+        printf("Retarget: **** Heavycoin Temporal Retargeting **** %d/%d : factor = %d\n",
+               count, (int)nLifeWindow/4, (int)pow(2.0f, min));
 
-        bnNew *= (int)pow( 2.0f, min );
+        bnNew *= (int)pow(2.0f, min);
 
-        printf( "Retarget: heal = %08x %s\n",
-			bnNew.GetCompact(),
-			bnNew.getuint256().ToString().c_str()
-		);
-		
-    }else{
-        // Soft limit
-        if( bnNew < bnLast / 2 ){
-            bnNew = bnLast / 2;
-        }else if( bnNew > 4 * bnLast ){
-            bnNew = 4 * bnLast;
-		}
+        printf("Retarget: heal = %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
     }
+    else {
+        // Soft limit
+        if (bnNew < bnLast/2)
+            bnNew = bnLast/2;
+        else if (bnNew > 4*bnLast)
+            bnNew = 4*bnLast;
+    }
+
     // Hard limit
-    if( bnNew > bnProofOfWorkLimit ){
+    if (bnNew > bnProofOfWorkLimit)
         bnNew = bnProofOfWorkLimit;
-	}
-    // Only retarget every nV3Interval blocks on difficulty increase
-    if( bnNew < bnLast
-		&& 
-		( pindexLast->nHeight + 1 ) % nV3Interval != 0 ) 
-	{
+
+    // Only retarget every nInterval blocks on difficulty increase
+    if (bnNew < bnLast && (pindexLast->nHeight + 1) % nInterval != 0) {
         // Sample the current block time over more blocks before
         // increasing the difficulty.
-        return 0x1d00ffff; //pindexLast->nBits;
+
+        return pindexLast->nBits;
     }
 
-    if ( bnCurr.GetCompact() != bnNew.GetCompact() ) {
-        printf( "Retarget: %08x %s\n", 
-			bnNew.GetCompact(), 
-			bnNew.getuint256().ToString().c_str()
-		);
+    if (bnCurr.GetCompact() != bnNew.GetCompact()) {
+        printf("Retarget: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
         bnCurr = bnNew;
     }
 
     return bnCurr.GetCompact();
 }
 
-// SECTION: GETWORK
-//
+unsigned int static NeoGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+{
+    static const int64 BlocksTargetSpacing = 6 * 60; // 6 minutes
+    unsigned int TimeDaySeconds = 60 * 60 * 24;
+    int64 PastSecondsMin = TimeDaySeconds*0.25;
+    int64 PastSecondsMax = TimeDaySeconds*1;
+    uint64 PastBlocksMin = PastSecondsMin / BlocksTargetSpacing;
+    uint64 PastBlocksMax = PastSecondsMax / BlocksTargetSpacing;
+
+    return KimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
+}
 
 unsigned int static OldGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     unsigned int nProofOfWorkLimit = bnProofOfWorkLimit.GetCompact();
-	
+
     // Genesis block
-    if( pindexLast != NULL ){
-        int nBlocksBack = ( (int64) 19);
-	
-		if( ( pindexLast->nHeight + 1 ) != ( (int64) 20) ){
-			nBlocksBack = ( (int64) 20);
-		}
-		
-		const CBlockIndex* pindexFirst = pindexLast;
-		for(int i = 0;
-				pindexFirst
-					&&
-				i < nBlocksBack;
-			i++)
-		{	
-			pindexFirst = pindexFirst->pprev;
-		}
+    if (pindexLast == NULL)
+        return nProofOfWorkLimit;
 
-		if( pindexFirst != NULL ){
-			int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-	
-			if( nActualTimespan < ( (int64) 5760) ){
-				nActualTimespan = ( (int64) 5760);
-			}else if( nActualTimespan > ( (int64) 8640) ){
-				nActualTimespan = ( (int64) 8640);
-			}
-			
-			CBigNum bnNew;
-			bnNew.SetCompact( pindexLast->nBits );
-			bnNew *= nActualTimespan;
-			bnNew /= ( (int64) 7200);
+    // Only change once per interval
+    /*if ((pindexLast->nHeight+1) % nInterval != 0)
+    {
+        // Special difficulty rule for testnet:
+        if (fTestNet)
+        {
+            // If the new block's timestamp is more than 2* 10 minutes
+            // then allow mining of a min-difficulty block.
+            if (pblock->nTime > pindexLast->nTime + nTargetSpacing*2)
+                return nProofOfWorkLimit;
+            else
+            {
+                // Return the last non-special-min-difficulty-rules-block
+                const CBlockIndex* pindex = pindexLast;
+                while (pindex->pprev && pindex->nHeight % nInterval != 0 && pindex->nBits == nProofOfWorkLimit)
+                    pindex = pindex->pprev;
+                return pindex->nBits;
+            }
+        }
 
-			if( bnNew > bnProofOfWorkLimit ){
-				bnNew = bnProofOfWorkLimit;
-			}
-			
-			return bnNew.GetCompact();
-			
-		}else{
-			return nProofOfWorkLimit;
-		}
-		
-	}else{
-		return nProofOfWorkLimit;
+        return pindexLast->nBits;
+    }*/
+
+    //Change difficulty every block based on the previous nInterval blocks
+
+    //Timewarp bug fix
+        // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
+     int nBlocksBack = nInterval-1;
+    if((pindexLast->nHeight+1) != nInterval)
+        nBlocksBack = nInterval;
+
+     const CBlockIndex* pindexFirst = pindexLast;
+    for (int i = 0; pindexFirst && i < nBlocksBack; i++)
+         pindexFirst = pindexFirst->pprev;
+    
+     //assert(pindexFirst);
+	if(pindexFirst==NULL){
+	return nProofOfWorkLimit;
 	}
+
+    // Limit adjustment step
+    int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+    //printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
+    
+    if (nActualTimespan < nTargetTimespan*0.8)
+        nActualTimespan = nTargetTimespan*0.8;
+
+    if (nActualTimespan > nTargetTimespan*1.2)
+        nActualTimespan = nTargetTimespan*1.2;
+
+    // Retarget
+    CBigNum bnNew;
+    bnNew.SetCompact(pindexLast->nBits);
+    bnNew *= nActualTimespan;
+    bnNew /= nTargetTimespan;
+
+    if (bnNew > bnProofOfWorkLimit)
+        bnNew = bnProofOfWorkLimit;
+
+    /// debug print
+    //printf("\n");
+    //printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespan, nActualTimespan);
+    //printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
+    //printf("GetNextWorkRequired RETARGET After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+
+    return bnNew.GetCompact();
 }
 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
-    assert( pindexLast );
-	if ( pindexLast->nHeight < 607 ){
-		return OldGetNextWorkRequired( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1)){
-	//TODO: TESTNET
-	// pindexLast->nHeight <= 73000){
-		//NOTE: Old Memorycoin V2 KGW Algo
-		return KimotoGravityWell( pindexLast, pblock );
-	}else{
-	// } else { //NOTE: Greater than or Equal to V3ForkHeight
-		//NOTE: TESTNET
-		// return bnProofOfWorkLimit.GetCompact();
-		return TemporalGetNextWorkRequired( pindexLast, pblock );
+    assert(pindexLast);
+	if(pindexLast->nHeight > V3FORKHEIGHT) {
+		return TemporalGetNextWorkRequired(pindexLast, pblock);
 	}
+    if (pindexLast->nHeight > DIFFICULTYKIMOTOFORKHEIGHT) {
+        return NeoGetNextWorkRequired(pindexLast, pblock);
+    } else {
+	//debug
+	//NeoGetNextWorkRequired(pindexLast, pblock);
+        //but return old value
+	return OldGetNextWorkRequired(pindexLast, pblock);
+    }
 }
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
 {
     CBigNum bnTarget;
     bnTarget.SetCompact(nBits);
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x9 ===\n");
+
     // Check range
     if (bnTarget <= 0 || bnTarget > bnProofOfWorkLimit)
         return error("CheckProofOfWork() : nBits below minimum work");
@@ -2017,7 +1524,7 @@ bool ConnectBestBlock(CValidationState &state) {
                 InvalidChainFound(pindexNewBest);
                 break;
             }
-			//printf(" === Memorycoin Client ===\n=== Debug Code: 1x8 ===\n");
+
             if (pindexBest == NULL || pindexTest->nChainWork > pindexBest->nChainWork)
                 vAttach.push_back(pindexTest);
 
@@ -2251,59 +1758,46 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
     {
         if (pvChecks)
             pvChecks->reserve(vin.size());
-		//printf(" === Memorycoin Client ===\n=== Debug Code: 1x7 ===\n");
+
         // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
         // for an attacker to attempt to split the network.
-        if (!HaveInputs(inputs)){
+        if (!HaveInputs(inputs))
             return state.Invalid(error("CheckInputs() : %s inputs unavailable", GetHash().ToString().c_str()));
-		}
-		
+
         // While checking, GetBestBlock() refers to the parent block.
         // This is also true for mempool checks.
         int nSpendHeight = inputs.GetBestBlock()->nHeight + 1;
         int64 nValueIn = 0;
         int64 nFees = 0;
-        for ( unsigned int i = 0;
-			i < vin.size();
-			i++ )
+        for (unsigned int i = 0; i < vin.size(); i++)
         {
             const COutPoint &prevout = vin[i].prevout;
             const CCoins &coins = inputs.GetCoins(prevout.hash);
-	
-			//SECTION: COINBASE MATURITY
-			//
-			//NOTE: Reset the COINBASE_MATURITY to reflect 8 minute blocks.
-			if ( coins.IsCoinBase() ){
-				if ( coins.nHeight >= V3FORKHEIGHT && ( ( nSpendHeight - coins.nHeight ) < COINBASE_MATURITY_V3 ) ){
-					return state.Invalid(error("CheckInputs() : tried to spend coinbase at depth %d", nSpendHeight - coins.nHeight));	
-				} else if ( nSpendHeight - coins.nHeight < COINBASE_MATURITY) {
-					return state.Invalid(error("CheckInputs() : tried to spend coinbase at depth %d", nSpendHeight - coins.nHeight));
-				}
-			}
-			
+
+            // If prev is coinbase, check that it's matured
+            if (coins.IsCoinBase()) {
+                if (nSpendHeight - coins.nHeight < COINBASE_MATURITY)
+                    return state.Invalid(error("CheckInputs() : tried to spend coinbase at depth %d", nSpendHeight - coins.nHeight));
+            }
+
             // Check for negative or overflow input values
             nValueIn += coins.vout[prevout.n].nValue;
-            if (!MoneyRange(coins.vout[prevout.n].nValue) || !MoneyRange(nValueIn)) {
+            if (!MoneyRange(coins.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
                 return state.DoS(100, error("CheckInputs() : txin values out of range"));
-			}
+
         }
 
-        if ( nValueIn < GetValueOut() ){
+        if (nValueIn < GetValueOut())
             return state.DoS(100, error("CheckInputs() : %s value in < value out", GetHash().ToString().c_str()));
-		}
-		
+
         // Tally transaction fees
         int64 nTxFee = nValueIn - GetValueOut();
-        if (nTxFee < 0){
+        if (nTxFee < 0)
             return state.DoS(100, error("CheckInputs() : %s nTxFee < 0", GetHash().ToString().c_str()));
-		}
-		
         nFees += nTxFee;
-        
-		if (!MoneyRange(nFees)){
+        if (!MoneyRange(nFees))
             return state.DoS(100, error("CheckInputs() : nFees out of range"));
-		}
-		
+
         // The first loop above does all the inexpensive checks.
         // Only if ALL inputs pass do we perform expensive ECDSA signature checks.
         // Helps prevent CPU exhaustion attacks.
@@ -2311,28 +1805,24 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
         // Skip ECDSA signature verification when connecting blocks
         // before the last block chain checkpoint. This is safe because block merkle hashes are
         // still computed and checked, and any change will be caught at the next checkpoint.
-        if ( fScriptChecks ) {
-            for ( unsigned int i = 0;
-				i < vin.size();
-				i++ )
-			{
+        if (fScriptChecks) {
+            for (unsigned int i = 0; i < vin.size(); i++) {
                 const COutPoint &prevout = vin[i].prevout;
                 const CCoins &coins = inputs.GetCoins(prevout.hash);
 
                 // Verify signature
                 CScriptCheck check(coins, *this, i, flags, 0);
-                if ( pvChecks ) {
+                if (pvChecks) {
                     pvChecks->push_back(CScriptCheck());
                     check.swap(pvChecks->back());
-                }else if(!check()) {
+                } else if (!check()) {
                     if (flags & SCRIPT_VERIFY_STRICTENC) {
                         // For now, check whether the failure was caused by non-canonical
                         // encodings or not; if so, don't trigger DoS protection.
                         CScriptCheck check(coins, *this, i, flags & (~SCRIPT_VERIFY_STRICTENC), 0);
-                        if (check()){
+                        if (check())
                             return state.Invalid();
-						}
-					}
+                    }
                     return state.DoS(100,false);
                 }
             }
@@ -2348,71 +1838,60 @@ bool CTransaction::CheckInputs(CValidationState &state, CCoinsViewCache &inputs,
 bool CBlock::DisconnectBlock(CValidationState &state, CBlockIndex *pindex, CCoinsViewCache &view, bool *pfClean)
 {
     assert(pindex == view.GetBestBlock());
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x6 ===\n");
-    if (pfClean) {
+
+    if (pfClean)
         *pfClean = false;
-	}
-	
+
     bool fClean = true;
 
     CBlockUndo blockUndo;
     CDiskBlockPos pos = pindex->GetUndoPos();
-    if (pos.IsNull()){
+    if (pos.IsNull())
         return error("DisconnectBlock() : no undo data available");
-	}else if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash())){
+    if (!blockUndo.ReadFromDisk(pos, pindex->pprev->GetBlockHash()))
         return error("DisconnectBlock() : failure reading undo data");
-	}else if (blockUndo.vtxundo.size() + 1 != vtx.size()){
+
+    if (blockUndo.vtxundo.size() + 1 != vtx.size())
         return error("DisconnectBlock() : block and undo data inconsistent");
-	}
+
     // undo transactions in reverse order
-    for ( int i = vtx.size() - 1;
-		i >= 0;
-		i-- )
-	{
+    for (int i = vtx.size() - 1; i >= 0; i--) {
         const CTransaction &tx = vtx[i];
         uint256 hash = tx.GetHash();
 
         // check that all outputs are available
-        if ( !view.HaveCoins( hash ) ){
+        if (!view.HaveCoins(hash)) {
             fClean = fClean && error("DisconnectBlock() : outputs still spent? database corrupted");
             view.SetCoins(hash, CCoins());
         }
-		
         CCoins &outs = view.GetCoins(hash);
 
         CCoins outsBlock = CCoins(tx, pindex->nHeight);
         // The CCoins serialization does not serialize negative numbers.
         // No network rules currently depend on the version here, so an inconsistency is harmless
         // but it must be corrected before txout nversion ever influences a network rule.
-        if ( outsBlock.nVersion < 0 ){
+        if (outsBlock.nVersion < 0)
             outs.nVersion = outsBlock.nVersion;
-		}
-        
-		if ( outs != outsBlock ){
+        if (outs != outsBlock)
             fClean = fClean && error("DisconnectBlock() : added transaction mismatch? database corrupted");
-		}
-		
+
         // remove outputs
         outs = CCoins();
 
         // restore inputs
-        if( i > 0 ) { // not coinbases
+        if (i > 0) { // not coinbases
             const CTxUndo &txundo = blockUndo.vtxundo[i-1];
             if (txundo.vprevout.size() != tx.vin.size())
                 return error("DisconnectBlock() : transaction and undo data inconsistent");
-            for ( unsigned int j = tx.vin.size();
-				j-- > 0; ) 
-			{
+            for (unsigned int j = tx.vin.size(); j-- > 0;) {
                 const COutPoint &out = tx.vin[j].prevout;
                 const CTxInUndo &undo = txundo.vprevout[j];
                 CCoins coins;
                 view.GetCoins(out.hash, coins); // this can fail if the prevout was already entirely spent
                 if (undo.nHeight != 0) {
                     // undo data contains height: this is the last output of the prevout tx being spent
-                    if (!coins.IsPruned()){
+                    if (!coins.IsPruned())
                         fClean = fClean && error("DisconnectBlock() : undo data overwriting existing transaction");
-					}
-					
                     coins = CCoins();
                     coins.fCoinBase = undo.fCoinBase;
                     coins.nHeight = undo.nHeight;
@@ -2421,16 +1900,13 @@ bool CBlock::DisconnectBlock(CValidationState &state, CBlockIndex *pindex, CCoin
                     if (coins.IsPruned())
                         fClean = fClean && error("DisconnectBlock() : undo data adding output to missing transaction");
                 }
-                if (coins.IsAvailable(out.n)){
+                if (coins.IsAvailable(out.n))
                     fClean = fClean && error("DisconnectBlock() : undo data overwriting existing output");
-               }
-			   if (coins.vout.size() < out.n+1){
+                if (coins.vout.size() < out.n+1)
                     coins.vout.resize(out.n+1);
-				}
                 coins.vout[out.n] = undo.txout;
-                if (!view.SetCoins(out.hash, coins)){
+                if (!view.SetCoins(out.hash, coins))
                     return error("DisconnectBlock() : cannot restore coin inputs");
-				}
             }
         }
     }
@@ -2484,7 +1960,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     if (!CheckBlock(state, !fJustCheck, !fJustCheck))
         return false;
 
-    // Verify that the view's current state corresponds to the previous block
+    // verify that the view's current state corresponds to the previous block
     assert(pindex->pprev == view.GetBestBlock());
 
     // Special case for the genesis block, skipping connection of its transactions
@@ -2539,35 +2015,34 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
     vPos.reserve(vtx.size());
     for (unsigned int i=0; i<vtx.size(); i++)
-	{
+    {
         const CTransaction &tx = vtx[i];
 
         nInputs += tx.vin.size();
         nSigOps += tx.GetLegacySigOpCount();
-        if (nSigOps > MAX_BLOCK_SIGOPS)
-			return state.DoS(100, error("ConnectBlock() : too many sigops %d",nSigOps));
-			
+        if (nSigOps > MAX_BLOCK_SIGOPS){
+            return state.DoS(100, error("ConnectBlock() : too many sigops %d",nSigOps));
+	}
         if (!tx.IsCoinBase())
-		{
+        {
             if (!tx.HaveInputs(view))
-				return state.DoS(100, error("ConnectBlock() : inputs missing/spent"));
-				
-            if (fStrictPayToScriptHash){
+                return state.DoS(100, error("ConnectBlock() : inputs missing/spent"));
+
+            if (fStrictPayToScriptHash)
+            {
                 // Add in sigops done by pay-to-script-hash inputs;
                 // this is to prevent a "rogue miner" from creating
                 // an incredibly-expensive-to-validate block.
                 nSigOps += tx.GetP2SHSigOpCount(view);
                 if (nSigOps > MAX_BLOCK_SIGOPS)
-					return state.DoS(100, error("ConnectBlock() : too many sigops"));
-					
+                     return state.DoS(100, error("ConnectBlock() : too many sigops"));
             }
 
             nFees += tx.GetValueIn(view)-tx.GetValueOut();
 
             std::vector<CScriptCheck> vChecks;
-            if (!tx.CheckInputs(state, view, fScriptChecks, flags, nScriptCheckThreads ? &vChecks : NULL)) 
-				return false;
-				
+            if (!tx.CheckInputs(state, view, fScriptChecks, flags, nScriptCheckThreads ? &vChecks : NULL))
+                return false;
             control.Add(vChecks);
         }
 
@@ -2580,106 +2055,61 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
     int64 nTime = GetTimeMicros() - nStart;
-    if (fBenchmark) {
+    if (fBenchmark)
         printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
+
+    {	
+	LOCK(grantdb);
+    int64 grantAward=0;
+    //Memorycoin grant awards
+    if(isGrantAwardBlock(pindex->nHeight)){
+	if(!getGrantAwards(pindex->nHeight)){
+		return state.DoS(100, error("ConnectBlock() : grant awards error"));
 	}
-	//SECTION - Memorycoin Grant Block Information
-	//
-	
-	{
-		LOCK( grantdb );
-		int64 grantAward = 0;
+			
+	//Ensure fees are going to award winners
+	printf("Check Grant Awards Are Being Added for block %d\n",pindex->nHeight);
+	unsigned int awardFound=0;
+	for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
+		grantAward=grantAward+gait->second;
+	}
+	for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
+		for (unsigned int j = 0; j <vtx[0].vout.size(); j++){
+			CTxDestination address;
+			ExtractDestination(vtx[0].vout[j].scriptPubKey,address);
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
+			int64 theAmount=vtx[0].vout[j].nValue;
+			//printf("Compare %llu, %llu\n",theAmount,gait->second);
+			//printf("Compare %s, %s\n",receiveAddress.c_str(),gait->first.c_str());
 		
-		//SECTION: Memorycoin Grant Awards Info
-		//
-		if( isGrantAwardBlock( pindex->nHeight ) )
-		{
-			//NOTE: getGrantAwards is returning false. 
-			//NOTE: This could mean the grant DB does not have enough information from previous blocks to process the current blocks.
-			if( !getGrantAwards( pindex->nHeight) ){
-				return state.DoS(100, error("ConnectBlock() : grant awards error"));
-			}
-			//NOTE: Ensure fees are going to award winners.
-			//
-			//TODO: Remove Debug Info
-			printf("Check Grant Awards rewarded for Block %d\n",
-				pindex->nHeight);
-			
-			unsigned int awardFound = 0;
-			
-			//NOTE:Loop through grantaward array and set them again?
-			//NOTE: What?
-			for( gait = grantAwards.begin();
-				gait != grantAwards.end();
-				++gait){
-				grantAward = grantAward + gait->second;
-			}
-			
-			//NOTE: ...again?
-			for( gait = grantAwards.begin();
-				gait != grantAwards.end();
-				++gait)
-			{
-				//NOTE: Check that these addresses certainly received the exact amount at the exact destination.
-				//NOTE: Scan through all the addresses with a TX destination
-				for ( unsigned int j = 0;
-					j <vtx[0].vout.size();
-					j++)
-				{
-					CTxDestination address;	
-					//NOTE: Find the receiving address.
-					ExtractDestination( vtx[ 0 ].vout[ j ].scriptPubKey, address );
-					//NOTE: Convert address to a string in order to compare it.
-					string receiveAddress = CMemorycoinAddress( address ).ToString().c_str();
-					
-					//NOTE: Convert the amount to an int64 value.
-					int64 theAmount = vtx[ 0 ].vout[ j ].nValue;
-					
-					//printf("Compare %llu, %llu\n",theAmount,gait->second);
-					//printf("Compare %s, %s\n",receiveAddress.c_str(),gait->first.c_str());
-				
-					if( theAmount == gait->second && receiveAddress == gait->first){
-						awardFound++;
-						break;
-					}
-				}
-			}
-		
-			printf( "Grant award in block %d, %d\n", awardFound, grantAwards.size() );
-			
-			for( gait = grantAwards.begin();
-				gait != grantAwards.end();
-				++gait)
-			{
-				printf("Grant award in block %s, %llu\n",
-					gait->first.c_str(),
-					gait->second
-					);
-			}
-			
-			//NOTE: This is an error in the Grant DB.
-			if ( awardFound != grantAwards.size() ){
-				return state.DoS(100, error("ConnectBlock() : Memorycoin DB Corruption detected. Grant Awards not being paid or paying too much. \n Please restore a previous version of grantdb.dat and/or delete the old grantdb database."));
+			if(theAmount==gait->second && receiveAddress==gait->first){
+				awardFound++;
+				break;
 			}
 		}
-				
-			//SECTION: Extra checks and genesis block verification.
-			//NOTE: 73366415666531 = 733,664.15666531 MMC was rewarded in the genesis block.
-			//NOTE: Also check for grant reward.
-			if( pindex->nHeight == 1 && !fTestNet ){
-				if( vtx[ 0 ].GetValueOut() != (int64) 73366415666531){
-					//NOTE: Surprisingly sometimes there are hackers that would like to give modify the genesis block.
-					return state.DoS(100, error("ConnectBlock() : Genesis block has been corrupted by a malicious node. (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees+grantAward)));
-				}
-			}else if ( vtx[ 0 ].GetValueOut() > GetBlockValue( pindex->nHeight, nFees + grantAward ) ){
-			//NOTE: Looks like someone sent a malicious block that doesn't compute in the code correctly. Prevent malicious address from receiving excess coins.
-				return state.DoS(100, error("ConnectBlock() %d : malicious block detected - incorrect amount received by coinbase. (actual=%"PRI64d" vs limit=%"PRI64d")", pindex->nHeight, vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees+grantAward)));
-			}
 	}
+	
+	//printf("Grant award in block %d, %d\n",awardFound,grantAwards.size());
+	/*for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
+		printf("Grant award in block %s, %llu\n",gait->first.c_str(),gait->second);
+	}*/			
+	if (awardFound != grantAwards.size()){
+		return state.DoS(100, error("ConnectBlock() : coinbase not paying grants to award winners "));
+	}
+    }
+        
+    //Check correct amount awarded in grants
+    if(pindex->nHeight==1 && !fTestNet){
+	if(vtx[0].GetValueOut()!=73366415666531){
+		return state.DoS(100, error("ConnectBlock() : Block 1 coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees+grantAward)));
+	}
+    }else if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees+grantAward)){
+        return state.DoS(100, error("ConnectBlock() %d : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", pindex->nHeight, vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees+grantAward)));
+    }
+}
 
     if (!control.Wait())
         return state.DoS(100, false);
-		
     int64 nTime2 = GetTimeMicros() - nStart;
     if (fBenchmark)
         printf("- Verify %u txins: %.2fms (%.3fms/txin)\n", nInputs - 1, 0.001 * nTime2, nInputs <= 1 ? 0 : 0.001 * nTime2 / (nInputs-1));
@@ -2690,14 +2120,11 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_SCRIPTS)
     {
-        if (pindex->GetUndoPos().IsNull()) 
-		{
+        if (pindex->GetUndoPos().IsNull()) {
             CDiskBlockPos pos;
-            
-			if (!FindUndoPos(state, pindex->nFile, pos, ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
+            if (!FindUndoPos(state, pindex->nFile, pos, ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
                 return error("ConnectBlock() : FindUndoPos failed");
-            
-			if (!blockundo.WriteToDisk(pos, pindex->pprev->GetBlockHash()))
+            if (!blockundo.WriteToDisk(pos, pindex->pprev->GetBlockHash()))
                 return state.Abort(_("Failed to write undo data"));
 
             // update nUndoPos in block index
@@ -2712,17 +2139,17 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
             return state.Abort(_("Failed to write block index"));
     }
 
-    if (fTxIndex && !pblocktree->WriteTxIndex(vPos))
+    if (fTxIndex)
+        if (!pblocktree->WriteTxIndex(vPos))
             return state.Abort(_("Failed to write transaction index"));
 
-	//NOTE: ALL CHECKS COMPLETE! FULLY VERIFIED.
     // add this block to the view's block chain
     assert(view.SetBestBlock(pindex));
 
-    //NOTE: Transactions that involve the client are added to client's wallet.
+    // Watch for transactions paying to me
     for (unsigned int i=0; i<vtx.size(); i++)
         SyncWithWallets(GetTxHash(i), vtx[i], this, true);
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x5 ===\n");
+
     return true;
 }
 
@@ -2743,7 +2170,6 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
         }
         if (pfork == plonger)
             break;
-			
         pfork = pfork->pprev;
         assert(pfork != NULL);
     }
@@ -2902,7 +2328,7 @@ bool SetBestChain(CValidationState &state, CBlockIndex* pindexNew)
         boost::replace_all(strCmd, "%s", hashBestChain.GetHex());
         boost::thread t(runCommand, strCmd); // thread runs free
     }
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x4 ===\n");
+
     return true;
 }
 
@@ -2953,7 +2379,6 @@ bool CBlock::AddToBlockIndex(CValidationState &state, const CDiskBlockPos &pos)
         return state.Abort(_("Failed to sync block index"));
 
     uiInterface.NotifyBlocksChanged();
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x4 ===\n");
     return true;
 }
 
@@ -3008,7 +2433,7 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
         return state.Abort(_("Failed to write file info"));
     if (fUpdatedLast)
         pblocktree->WriteLastBlockFile(nLastBlockFile);
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x3 ===\n");
+
     return true;
 }
 
@@ -3048,7 +2473,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
         else
             return state.Error();
     }
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x2 ===\n");
+
     return true;
 }
 
@@ -3127,7 +2552,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
     // Check merkle root
     if (fCheckMerkleRoot && hashMerkleRoot != BuildMerkleTree())
         return state.DoS(100, error("CheckBlock() : hashMerkleRoot mismatch"));
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x1 ===\n");
+
     return true;
 }
 
@@ -3152,7 +2577,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
         if (nBits != GetNextWorkRequired(pindexPrev, this))
             return state.DoS(100, error("AcceptBlock() : incorrect proof of work"));
 
-        // Check timestamp against previous
+        // Check timestamp against prev
         if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
             return state.Invalid(error("AcceptBlock() : block's timestamp is too early"));
 
@@ -3215,19 +2640,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
             if (nBestHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
                 pnode->PushInventory(CInv(MSG_BLOCK, hash));
     }
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 1x0 ===\n");
 
-	//SECTION: MAX MONEY
-	//
-	//NOTE: Reset the Maximum Money for birthday blocks.
-	//
-	if ( nHeight > 83999
-		&&
-		(nHeight - 84000) % 65520 == 0 )
-	{
-		SetMaxMoney( (int64) nHeight);
-	}
-	
     return true;
 }
 
@@ -3247,20 +2660,17 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 {
     // Check for duplicate
     uint256 hash = pblock->GetHash();
-    if (mapBlockIndex.count(hash)){
+    if (mapBlockIndex.count(hash))
         return state.Invalid(error("ProcessBlock() : already have block %d %s", mapBlockIndex[hash]->nHeight, hash.ToString().c_str()));
-    }else if (mapOrphanBlocks.count(hash)){
+    if (mapOrphanBlocks.count(hash))
         return state.Invalid(error("ProcessBlock() : already have block (orphan) %s", hash.ToString().c_str()));
-	}
+
     // Preliminary checks
-    if (!pblock->CheckBlock(state)){
+    if (!pblock->CheckBlock(state))
         return error("ProcessBlock() : CheckBlock FAILED");
-	}
-	
+
     CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
-    if ( pcheckpoint 
-	&&
-	pblock->hashPrevBlock != hashBestChain )
+    if (pcheckpoint && pblock->hashPrevBlock != hashBestChain)
     {
         // Extra checks to prevent "fill up memory by spamming with bogus blocks"
         int64 deltaTime = pblock->GetBlockTime() - pcheckpoint->nTime;
@@ -3280,14 +2690,12 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
 
 
     // If we don't already have its previous block, shunt it off to holding area until we get it
-    if( pblock->hashPrevBlock != 0
-	&& 
-	!mapBlockIndex.count(pblock->hashPrevBlock) )
+    if (pblock->hashPrevBlock != 0 && !mapBlockIndex.count(pblock->hashPrevBlock))
     {
         printf("ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.ToString().c_str());
 
         // Accept orphans as long as there is a node to request its parents from
-        if( pfrom) {
+        if (pfrom) {
             CBlock* pblock2 = new CBlock(*pblock);
             mapOrphanBlocks.insert(make_pair(hash, pblock2));
             mapOrphanBlocksByPrev.insert(make_pair(pblock2->hashPrevBlock, pblock2));
@@ -3299,21 +2707,18 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
     }
 
     // Store to disk
-    if( !pblock->AcceptBlock( state, dbp ) ){
+    if (!pblock->AcceptBlock(state, dbp))
         return error("ProcessBlock() : AcceptBlock FAILED");
-	}
-	
+
     // Recursively process any orphan blocks that depended on this one
     vector<uint256> vWorkQueue;
     vWorkQueue.push_back(hash);
-    for ( unsigned int i = 0;
-		i < vWorkQueue.size();
-		i++ )
+    for (unsigned int i = 0; i < vWorkQueue.size(); i++)
     {
         uint256 hashPrev = vWorkQueue[i];
         for (multimap<uint256, CBlock*>::iterator mi = mapOrphanBlocksByPrev.lower_bound(hashPrev);
              mi != mapOrphanBlocksByPrev.upper_bound(hashPrev);
-             ++mi )
+             ++mi)
         {
             CBlock* pblockOrphan = (*mi).second;
             // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan resolution (that is, feeding people an invalid block based on LegitBlockX in order to get anyone relaying LegitBlockX banned)
@@ -3323,13 +2728,19 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
             mapOrphanBlocks.erase(pblockOrphan->GetHash());
             delete pblockOrphan;
         }
-        mapOrphanBlocksByPrev.erase( hashPrev );
+        mapOrphanBlocksByPrev.erase(hashPrev);
     }
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x9 ===\n");
-	
+
     printf("ProcessBlock: ACCEPTED\n");
     return true;
 }
+
+
+
+
+
+
+
 
 CMerkleBlock::CMerkleBlock(const CBlock& block, CBloomFilter& filter)
 {
@@ -3366,12 +2777,12 @@ CMerkleBlock::CMerkleBlock(const CBlock& block, CBloomFilter& filter)
 
 uint256 CPartialMerkleTree::CalcHash(int height, unsigned int pos, const std::vector<uint256> &vTxid) {
     if (height == 0) {
-        // hash at height 0 is the tx-ids themself
+        // hash at height 0 is the txids themself
         return vTxid[pos];
     } else {
         // calculate left hash
         uint256 left = CalcHash(height-1, pos*2, vTxid), right;
-        // calculate right hash if not beyond the end of the array - copy left hash otherwise
+        // calculate right hash if not beyong the end of the array - copy left hash otherwise1
         if (pos*2+1 < CalcTreeWidth(height-1))
             right = CalcHash(height-1, pos*2+1, vTxid);
         else
@@ -3466,7 +2877,7 @@ uint256 CPartialMerkleTree::ExtractMatches(std::vector<uint256> &vMatch) {
     // traverse the partial tree
     unsigned int nBitsUsed = 0, nHashUsed = 0;
     uint256 hashMerkleRoot = TraverseAndExtract(nHeight, 0, nBitsUsed, nHashUsed, vMatch);
-    // verify that no problems occurred during the tree traversal
+    // verify that no problems occured during the tree traversal
     if (fBad)
         return 0;
     // verify that all bits were consumed (except for the padding caused by serializing it as a byte sequence)
@@ -3554,7 +2965,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
         throw runtime_error("LoadBlockIndex() : new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x8 ===\n");
+
     return pindexNew;
 }
 
@@ -3621,14 +3032,11 @@ bool static LoadBlockIndexDB()
     printf("LoadBlockIndexDB(): hashBestChain=%s  height=%d date=%s\n",
         hashBestChain.ToString().c_str(), nBestHeight,
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-		
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x7 ===\n");
-	
+
     return true;
 }
 
 bool VerifyDB() {
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x6 ===\n");
     if (pindexBest == NULL || pindexBest->pprev == NULL)
         return true;
 
@@ -3698,7 +3106,7 @@ bool VerifyDB() {
     }
 
     printf("No coin database inconsistencies in last %i blocks (%i transactions)\n", pindexBest->nHeight - pindexState->nHeight, nGoodTransactions);
-		//printf(" === Memorycoin Client ===\n=== Debug Code: 0x5 ===\n");
+
     return true;
 }
 
@@ -3712,8 +3120,6 @@ void UnloadBlockIndex()
     nBestInvalidWork = 0;
     hashBestChain = 0;
     pindexBest = NULL;
-	
-//	printf(" === Memorycoin Client ===\n=== Debug Code: 0x4 ===\n");
 }
 
 bool LoadBlockIndex()
@@ -3732,7 +3138,7 @@ bool LoadBlockIndex()
     //
     if (!fReindex && !LoadBlockIndexDB())
         return false;
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x3 ===\n");
+
     return true;
 }
 
@@ -3742,9 +3148,6 @@ bool InitBlockIndex() {
 
     fMultiAddress = GetBoolArg("-multiaddress", false);
 
-	//NOTE: Initialize Rate Database (done every launch)
-	PopulateRateTables();
-	
     // Check whether we're already initialized
     if (pindexGenesisBlock != NULL)
         return true;
@@ -3752,7 +3155,6 @@ bool InitBlockIndex() {
     // Use the provided setting for -txindex in the new database
     fTxIndex = GetBoolArg("-txindex", true);
     pblocktree->WriteFlag("txindex", fTxIndex);
-	
     printf("Initializing databases...\n");
 
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
@@ -3828,7 +3230,7 @@ bool InitBlockIndex() {
             return error("LoadBlockIndex() : failed to initialize block database: %s", e.what());
         }
     }
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x2 ===\n");
+
     return true;
 }
 
@@ -3971,12 +3373,19 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
     } catch(std::runtime_error &e) {
         AbortNode(_("Error: system error: ") + e.what());
     }
-    if (nLoaded > 0){
+    if (nLoaded > 0)
         printf("Loaded %i blocks from external file in %"PRI64d"ms\n", nLoaded, GetTimeMillis() - nStart);
-	}
-	
     return nLoaded > 0;
 }
+
+
+
+
+
+
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -4034,6 +3443,13 @@ string GetWarnings(string strFor)
     return "error";
 }
 
+
+
+
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Messages
@@ -4058,7 +3474,6 @@ bool static AlreadyHave(const CInv& inv)
         return mapBlockIndex.count(inv.hash) ||
                mapOrphanBlocks.count(inv.hash);
     }
-		//printf(" === Memorycoin Client ===\n=== Debug Code: 0x1 ===\n");
     // Don't know what it is, just say we already got one
     return true;
 }
@@ -4602,15 +4017,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         pfrom->AddInventoryKnown(inv);
 
         CValidationState state;
-        if (ProcessBlock(state, pfrom, &block)){
+        if (ProcessBlock(state, pfrom, &block))
             mapAlreadyAskedFor.erase(inv);
-		}
-		
         int nDoS;
-        
-		if (state.IsInvalid(nDoS)){
+        if (state.IsInvalid(nDoS))
             pfrom->Misbehaving(nDoS);
-		}
     }
 
 
@@ -5175,10 +4586,8 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 {
     // Create new block
     auto_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
-    if(!pblocktemplate.get()){
+    if(!pblocktemplate.get())
         return NULL;
-	}
-	
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
 
     // Create coinbase tx
@@ -5187,71 +4596,59 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     txNew.vin[0].prevout.SetNull();
     txNew.vout.resize(1);
     
-    printf(" === Memorycoin Client === \n === Create Block %d ===\n ",pindexBest->nHeight+1);
-	
-    if(!fTestNet && pindexBest->nHeight==0){
-		//Block 1 - add balances for beta testers, protoshares
-		//NOTE: Genesis Block
-		std::map<std::string,int64> genesisBalances = getGenesisBalances();
-		std::map<std::string,int64>::iterator balit;
-		int i=1;
-		int64 total=0;
-		txNew.vout.resize(genesisBalances.size()+1);
-		for( balit = genesisBalances.begin();
-			balit != genesisBalances.end();
-			++balit)
-		{
-			//printf("gb:%s,%llu",balit->first.c_str(),balit->second);
-			CMemorycoinAddress address(balit->first);
-			txNew.vout[i].scriptPubKey.SetDestination( address.Get() );
-			txNew.vout[i].nValue = balit->second;
-			total = total+balit->second;
-			i++;
-		}
-		//printf(" === Memorycoin Client ===\n === Generated Genesis Block: %llu MMC === \n",total);  
+    printf("Create Block, %d\n",pindexBest->nHeight+1); 
+    if(!fTestNet && pindexBest->nHeight+1==1){
+	//Block 1 - add balances for beta testers, protoshares
+    	std::map<std::string,int64> genesisBalances= getGenesisBalances();
+	std::map<std::string,int64>::iterator balit;
+	int i=1;
+	int64 total=0;
+	txNew.vout.resize(genesisBalances.size()+1);
+	for(balit=genesisBalances.begin(); balit!=genesisBalances.end(); ++balit){
+		//printf("gb:%s,%llu",balit->first.c_str(),balit->second);
+		CMemorycoinAddress address(balit->first);
+		txNew.vout[i].scriptPubKey.SetDestination( address.Get() );
+		txNew.vout[i].nValue = balit->second;
+		total=total+balit->second;
+		i++;
 	}
+	printf("Total ...%llu\n",total);  
+	}
+    
     
     {
-		LOCK( grantdb );
-		//For grant award block, add grants to coinbase
-		//NOTE: We're creating the next block (powerful pools)
-		if( isGrantAwardBlock( pindexBest->nHeight + 1 ) ){
-			if( !getGrantAwards( pindexBest->nHeight + 1 ) ){
-				throw std::runtime_error( "ConnectBlock() : Connect Block grant awards error.\n" );
-			}
-			
-			//printf(" === Memorycoin Client ===\n === Retrieved Grant Rewards, Add to Block %d === \n", pindexBest->nHeight+1);
-			txNew.vout.resize( 1 + grantAwards.size() );
-
-			int i = 0;
-			
-			for( gait = grantAwards.begin();
-				gait != grantAwards.end();
-				++gait)
-			{
-				//printf(" === Grant %llu MMC to %s === \n",gait->second,gait->first.c_str());
-				CMemorycoinAddress address( gait->first );
-				txNew.vout[ i + 1 ].scriptPubKey.SetDestination( address.Get() );
-				txNew.vout[ i + 1 ].nValue = gait->second;
-				i++;		
-			}
+    LOCK(grantdb);
+    //For grant award block, add grants to coinbase
+    if(isGrantAwardBlock(pindexBest->nHeight+1)){
+		if(!getGrantAwards(pindexBest->nHeight+1)){
+			 throw std::runtime_error("ConnectBlock() : ConnectBlock grant awards error");
 		}
-    }
-    //NOTE: Debug Information
-	//printf("After grant ...\n");
+	printf("Got grant awards, now to add - Block %d\n", pindexBest->nHeight+1);
+	txNew.vout.resize(1+grantAwards.size());
+		    
+	int i=0;
+	for(gait=grantAwards.begin(); gait!=grantAwards.end(); ++gait){
+		printf("Add %s %llu\n",gait->first.c_str(),gait->second);
 	
-    CPubKey pubkey;
-    
-	if (!reservekey.GetReservedKey(pubkey)){
-        return NULL;
+		CMemorycoinAddress address(gait->first);
+		txNew.vout[i+1].scriptPubKey.SetDestination( address.Get() );
+		txNew.vout[i+1].nValue = gait->second;
+		i++;		
 	}
+    }
+    }
     
-	txNew.vout[0].scriptPubKey << pubkey << OP_CHECKSIG;
+    printf("After grant ...\n");
+    
+    CPubKey pubkey;
+    if (!reservekey.GetReservedKey(pubkey))
+        return NULL;
+    txNew.vout[0].scriptPubKey << pubkey << OP_CHECKSIG;
 
     // Add our coinbase tx as first transaction
-    pblock->vtx.push_back( txNew );
-    pblocktemplate->vTxFees.push_back( -1 ); // updated at end
-    pblocktemplate->vTxSigOps.push_back( -1 ); // updated at end
+    pblock->vtx.push_back(txNew);
+    pblocktemplate->vTxFees.push_back(-1); // updated at end
+    pblocktemplate->vTxSigOps.push_back(-1); // updated at end
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", MAX_BLOCK_SIZE_GEN/2);
@@ -5259,10 +4656,9 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
 
     // Special compatibility rule before 15 May: limit size to 500,000 bytes:
-    if ( GetAdjustedTime() < 1368576000 ){
+    if (GetAdjustedTime() < 1368576000)
         nBlockMaxSize = std::min(nBlockMaxSize, (unsigned int)(MAX_BLOCK_SIZE_GEN));
-	}
-	
+
     // How much of the block should be dedicated to high-priority transactions,
     // included regardless of the fees they pay
     unsigned int nBlockPrioritySize = GetArg("-blockprioritysize", 27000);
@@ -5276,63 +4672,51 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     // Collect memory pool transactions into the block
     int64 nFees = 0;
     {
-        LOCK2( cs_main, mempool.cs );
+        LOCK2(cs_main, mempool.cs);
         CBlockIndex* pindexPrev = pindexBest;
-        CCoinsViewCache view( *pcoinsTip, true );
+        CCoinsViewCache view(*pcoinsTip, true);
 
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
-        bool fPrintPriority = GetBoolArg( "-printpriority" );
+        bool fPrintPriority = GetBoolArg("-printpriority");
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
-        vecPriority.reserve( mempool.mapTx.size() );
-        for ( map<uint256, CTransaction>::iterator mi = mempool.mapTx.begin();
-			mi != mempool.mapTx.end();
-			++mi)
+        vecPriority.reserve(mempool.mapTx.size());
+        for (map<uint256, CTransaction>::iterator mi = mempool.mapTx.begin(); mi != mempool.mapTx.end(); ++mi)
         {
             CTransaction& tx = (*mi).second;
-            if ( tx.IsCoinBase() 
-			|| 
-				!tx.IsFinal() ){
+            if (tx.IsCoinBase() || !tx.IsFinal())
                 continue;
-			}
-			
+
             COrphan* porphan = NULL;
             double dPriority = 0;
             int64 nTotalIn = 0;
             bool fMissingInputs = false;
-            
-			BOOST_FOREACH(const CTxIn& txin, tx.vin)
+            BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
                 // Read prev transaction
-                if ( !view.HaveCoins( txin.prevout.hash ) )
+                if (!view.HaveCoins(txin.prevout.hash))
                 {
                     // This should never happen; all transactions in the memory
                     // pool should connect to either transactions in the chain
                     // or other transactions in the memory pool.
-                    if ( !mempool.mapTx.count( txin.prevout.hash ) )
+                    if (!mempool.mapTx.count(txin.prevout.hash))
                     {
-                        //printf("ERROR: mempool transaction missing input\n");
-                        if ( fDebug ){
-							assert("mempool transaction missing input" == 0);
-                        }
-						
-						fMissingInputs = true;
-                        
-						if ( porphan ){
+                        printf("ERROR: mempool transaction missing input\n");
+                        if (fDebug) assert("mempool transaction missing input" == 0);
+                        fMissingInputs = true;
+                        if (porphan)
                             vOrphan.pop_back();
-						}
-						
                         break;
                     }
 
                     // Has to wait for dependencies
-                    if ( !porphan )
+                    if (!porphan)
                     {
                         // Use list for automatic deletion
-                        vOrphan.push_back( COrphan(&tx) );
+                        vOrphan.push_back(COrphan(&tx));
                         porphan = &vOrphan.back();
                     }
                     mapDependers[txin.prevout.hash].push_back(porphan);
@@ -5349,11 +4733,8 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 
                 dPriority += (double)nValueIn * nConf;
             }
-			
-            if (fMissingInputs){
-				continue;
-			}
-			
+            if (fMissingInputs) continue;
+
             // Priority is sum(valuein * age) / txsize
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             dPriority /= nTxSize;
@@ -5363,24 +4744,25 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
             // incentive to create smaller transactions.
             double dFeePerKb =  double(nTotalIn-tx.GetValueOut()) / (double(nTxSize)/1000.0);
 
-            if ( porphan )
+            if (porphan)
             {
                 porphan->dPriority = dPriority;
                 porphan->dFeePerKb = dFeePerKb;
-            }else{
+            }
+            else
                 vecPriority.push_back(TxPriority(dPriority, dFeePerKb, &(*mi).second));
-			}
-		}
+        }
+
         // Collect transactions into block
         uint64 nBlockSize = 1000;
         uint64 nBlockTx = 0;
         int nBlockSigOps = 100;
-        bool fSortedByFee = ( nBlockPrioritySize <= 0 );
+        bool fSortedByFee = (nBlockPrioritySize <= 0);
 
-        TxPriorityCompare comparer( fSortedByFee );
-        std::make_heap( vecPriority.begin(), vecPriority.end(), comparer );
+        TxPriorityCompare comparer(fSortedByFee);
+        std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
 
-        while ( !vecPriority.empty() )
+        while (!vecPriority.empty())
         {
             // Take highest priority transaction off the priority queue:
             double dPriority = vecPriority.front().get<0>();
@@ -5392,56 +4774,44 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            if ( nBlockSize + nTxSize >= nBlockMaxSize ){
+            if (nBlockSize + nTxSize >= nBlockMaxSize)
                 continue;
-			}
 
             // Legacy limits on sigOps:
             unsigned int nTxSigOps = tx.GetLegacySigOpCount();
-            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS){
+            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
                 continue;
-			}
+
             // Skip free transactions if we're past the minimum block size:
-            if ( fSortedByFee 
-			&& 
-				(dFeePerKb < CTransaction::nMinTxFee) 
-			&& 
-				(nBlockSize + nTxSize >= nBlockMinSize) ){
-				
-				continue;
-			}
+            if (fSortedByFee && (dFeePerKb < CTransaction::nMinTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
+                continue;
+
             // Prioritize by fee once past the priority size or we run out of high-priority
             // transactions:
             if (!fSortedByFee &&
-					( ( nBlockSize + nTxSize >= nBlockPrioritySize )
-				|| 
-					( dPriority < COIN * 144 / 250 ) )
-				)
+                ((nBlockSize + nTxSize >= nBlockPrioritySize) || (dPriority < COIN * 144 / 250)))
             {
                 fSortedByFee = true;
-                comparer = TxPriorityCompare( fSortedByFee );
-                std::make_heap( vecPriority.begin(), vecPriority.end(), comparer );
+                comparer = TxPriorityCompare(fSortedByFee);
+                std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
             }
 
-            if ( !tx.HaveInputs( view ) ){
+            if (!tx.HaveInputs(view))
                 continue;
-			}
 
-            int64 nTxFees = tx.GetValueIn( view ) - tx.GetValueOut();
+            int64 nTxFees = tx.GetValueIn(view)-tx.GetValueOut();
 
-            nTxSigOps += tx.GetP2SHSigOpCount( view );
-            if ( nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS ){
+            nTxSigOps += tx.GetP2SHSigOpCount(view);
+            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
                 continue;
-			}
 
             CValidationState state;
-            if ( !tx.CheckInputs( state, view, true, SCRIPT_VERIFY_P2SH ) ){
+            if (!tx.CheckInputs(state, view, true, SCRIPT_VERIFY_P2SH))
                 continue;
-			}
 
             CTxUndo txundo;
             uint256 hash = tx.GetHash();
-            tx.UpdateCoins( state, view, txundo, pindexPrev->nHeight+1, hash );
+            tx.UpdateCoins(state, view, txundo, pindexPrev->nHeight+1, hash);
 
             // Added
             pblock->vtx.push_back(tx);
@@ -5478,22 +4848,15 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        //printf(" === Memorycoin Client ===\n ==== CreateNewBlock(): total size %"PRI64u" === \n", nBlockSize);
+        printf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
 
-		
-        pblock->vtx[0].vout[0].nValue = GetBlockValue( pindexPrev->nHeight + 1, nFees );
+        pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
         pblocktemplate->vTxFees[0] = -nFees;
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->UpdateTime(pindexPrev);
-		
-		//SECTION: Set Max target
-		//
-		
-       //GETNEXTWORKREQUIRED
-		pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock);
-		
+        pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock);
         pblock->nNonce         = 0;
         pblock->vtx[0].vin[0].scriptSig = CScript() << OP_0 << OP_0;
         pblocktemplate->vTxSigOps[0] = pblock->vtx[0].GetLegacySigOpCount();
@@ -5503,15 +4866,10 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
         indexDummy.nHeight = pindexPrev->nHeight + 1;
         CCoinsViewCache viewNew(*pcoinsTip, true);
         CValidationState state;
-		
-		//printf(" === Memorycoin Client ===\n ==== Test Connect Block === \n"); 
-        
-		if (!pblock->ConnectBlock(state, &indexDummy, viewNew, true)){
-            throw std::runtime_error(" === Memorycoin Client ===\n ==== CreateNewBlock() : ConnectBlock failed === \n");
-		}
+	printf("Test Connect Block\n"); 
+        if (!pblock->ConnectBlock(state, &indexDummy, viewNew, true))
+            throw std::runtime_error("CreateNewBlock() : ConnectBlock failed");
     }
-	
-	//printf(" === Memorycoin Client ===\n=== Debug Code: 0x0 ===\n");
 
     return pblocktemplate.release();
 }
@@ -5598,7 +4956,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     fprintf( stderr, "hash %s < %s\n", hash.ToString().c_str(), hashTarget.ToString().c_str() );
 
     //// debug print
-   // printf(" === Memorycoin Client === \n");
+    printf("MemorycoinMiner:\n");
     printf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
     pblock->print();
     printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
@@ -5606,10 +4964,9 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     // Found a solution
     {
         LOCK(cs_main);
-        
-		if (pblock->hashPrevBlock != hashBestChain){
-            return error(" === Memorycoin Client ===\n ==== Generated a Stale Block ===\n");
-		}
+        if (pblock->hashPrevBlock != hashBestChain)
+            return error("MemorycoinMiner : generated block is stale");
+
         // Remove key from key pool
         reservekey.KeepKey();
 
@@ -5621,10 +4978,9 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
         // Process this block the same as if we had received it from another node
         CValidationState state;
-        if (!ProcessBlock(state, NULL, pblock)){
-            return error(" === Memorycoin Client ===\n ====  ProcessBlock, block not accepted... Already received it from another node. ===\n");
-		}
-	}
+        if (!ProcessBlock(state, NULL, pblock))
+            return error("MemorycoinMiner : ProcessBlock, block not accepted");
+    }
 
     return true;
 }
@@ -5633,7 +4989,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 {
-    printf("=== Memorycoin Client ===\n ==== Miner Started === \n");
+    printf("MemorycoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("memorycoin-miner");
 
@@ -5674,7 +5030,7 @@ void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
         CBlock *pblock = &pblocktemplate->block;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-        printf("Running Memorycoin Miner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        printf("Running MemorycoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
@@ -5709,7 +5065,7 @@ void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 		for(int i=0;i<1;i++){
 			pblock->nNonce=pblock->nNonce+1;
 			if (nThreads == 0){
-				printf("=== Memorycoin Client ===\n ==== Memorycoin Miner terminated. ===\n");
+				printf("MemorycoinMiner terminated\n");
 				delete [] scratchpad;
 				return;
 			}
@@ -5781,32 +5137,29 @@ void static MemorycoinMiner(CWallet *pwallet, unsigned int randStartNonce)
 
             // Check for stop or if block needs to be rebuilt
             boost::this_thread::interruption_point();
-            if (vNodes.empty()){
+            if (vNodes.empty())
                 break;
-			}else if (nBlockNonce >= 0xffff0000){
+            if (nBlockNonce >= 0xffff0000)
                 break;
-			}else if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60){
+            if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 break;
-			}else if (pindexPrev != pindexBest){
+            if (pindexPrev != pindexBest)
                 break;
-			}
             
             // Update nTime every few seconds
             pblock->UpdateTime(pindexPrev);
             nBlockTime = ByteReverse(pblock->nTime);
-			
-			//NOTE: Is this the error?
-          //  if (fTestNet)
-          //  {
-            //     Changing pblock->nTime can change work required on testnet:
-          //      nBlockBits = ByteReverse(pblock->nBits);
-           //     hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-            //}
+            if (fTestNet)
+            {
+                // Changing pblock->nTime can change work required on testnet:
+                nBlockBits = ByteReverse(pblock->nBits);
+                hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+            }
         }
     } }
     catch (boost::thread_interrupted)
     {	    
-        printf("=== Memorycoin Client ===\n ==== Memorycoin Miner terminated ===\n");
+        printf("MemorycoinMiner terminated\n");
 	delete [] scratchpad;
         throw;
     }
@@ -6007,19 +5360,14 @@ public:
 
 
 
-//SECTION: GrantPrefixes and Grant Block Intervals
-//
-static string GRANTPREFIXV2="MVTE";
-//static const int64 GRANTBLOCKINTERVALV2 =  20; // (2*60*60)/(int64) 360(360); 
-//NOTE: 2 hours per grant block, 168 per week, 8736 per year.
-
-static const int64 GRANTBLOCKINTERVALV3 =  60; // (8*60*60)/nV3TargetSpacing; 
-//NOTE: 8 hours per grant block, 21 per week, 1092 per year.
+//Grant award once every two hours - every 20 blocks
+static const int64 GRANTBLOCKINTERVAL = (2*60*60)/nTargetSpacing;
+static const int64 GRANTBLOCKINTERVALNEW = 180; // 1 day
+static string GRANTPREFIX ="MVTE";
+static string GRANTPREFIXNEW = "MMC";
 
 static int numberOfOffices = 6;
 string electedOffices[7];
-
-//XFT?
 //= {"ceo","cto","cno","cmo","cso","cha","XFT"};
 //Chief Executive Officer
 //Chief Technology Officer
@@ -6031,18 +5379,12 @@ string electedOffices[7];
 
 //Implement in memory for now - this will cause slow startup as recalculation of all votes takes place every startup. 
 //These should be persisted in a database or on disk
-
-//How many blocks processed for grant allocation purposes
-int64 grantDatabaseBlockHeight=-1; 
-
-//Balances as at grant allocation block point
-std::map<std::string,int64> balances; 
-
-//Voting prefs as at grant allocation block point
-std::map<std::string,std::map<int64,std::string> > votingPreferences[7]; 
+int64 grantDatabaseBlockHeight=-1; //How many blocks processed for grant allocation purposes
+std::map<std::string,int64> balances; //Balances as at grant allocation block point
+std::map<std::string,std::map<int64,std::string> > votingPreferences[7]; //Voting prefs as at grant allocation block point
 
 
-//SECTION: Grant Election Variables
+
 //These do not need to persist. They are necessarily rebuilt when required
 CBlockIndex* gdBlockPointer = NULL;
 std::map<std::string,std::map<int64, std::string> >::iterator ballotit;
@@ -6061,388 +5403,204 @@ std::map<int64,std::string>::iterator it2;
 
 std::map<std::string,std::map<int64,std::string> >::iterator vpit;
 
- //Report on Votes that were wasted
-std::map<std::string,int64 > wastedVotes;
+std::map<std::string,int64 > wastedVotes; //Report on Votes that were wasted
+std::map<std::string,std::map<int64,std::string> > electedVotes; //Report on where votes went 
+std::map<std::string,std::map<int64,std::string> > supportVotes; //Report on support for candidates
 
-//Report on where votes went 
-std::map<std::string,std::map<int64,std::string> > electedVotes; 
-
-//Report on support for candidates
-std::map<std::string,std::map<int64,std::string> > supportVotes; 
-
-bool isGrantAwardBlock(int64 nHeight){
-	//NOTE: CALLED EVERY BLOCK. (Minimize computations here.)
-	//printf("isGrantAwardBlock");
-	//NOTE: The v3 fork block index must also grant to candidates.
-	if ( (nHeight != 0) 
-	&& 
-		( (nHeight < V3FORKHEIGHT || nHeight == V3FORKHEIGHT )
-			&& 
-		(nHeight % 20 == 0) 
-			&& 
-		(nHeight != 20) ) 
-	|| 
-		( nHeight > V3FORKHEIGHT
-			&&
-		(nHeight % GRANTBLOCKINTERVALV3 == 0) 
-			&& 
-		(nHeight != GRANTBLOCKINTERVALV3 ) ) )
-	{
-		//printf("isGrantAwardBlock : True");
-		return true;
-	}else{
-		//printf("isGrantAwardBlock : False");
-		return false;
-	}
+int64 getNUMBEROFAWARDS(int64 blockNumber){
+		return 1;
 }
 
-//NOTE: Memorycoin V4+: Serialization of Grant DB will soon be depreciated. Serialization is too slow.
-//TODO: Memorycoin V4 will require BOOST Serialization i.e. http://www.codeproject.com/Articles/225988/A-practical-guide-to-Cplusplus-serialization
-//NOTE: More optimizations required here to improve saving of the DB.
-//TODO: This could be compressed and/or encrypted to save space.
+bool isGrantAwardBlock(int64 nHeight){
+	if(nHeight % (nHeight > V3FORKHEIGHT ? GRANTBLOCKINTERVALNEW : GRANTBLOCKINTERVAL) == 0 && nHeight != 0 && nHeight != GRANTBLOCKINTERVAL){
+		return true;
+	}
+	return false;	
+}
+
+
 void serializeGrantDB(string filename){
-		//NOTE: Debug Information
 		printf("Serialize Grant Info Database %llu\n",grantDatabaseBlockHeight);
-		
-		//NOTE: Setup the filestream object and open the file.
 		ofstream grantdb;
 		grantdb.open (filename.c_str(), ios::trunc);
 		
-		//SECTION: Height of latest grant block
-		//
-		//NOTE: This writes the latest grant DB height on the first line of the file to be saved.
-		//NOTE:  Grant DB height = the latest multiple of 20 (election block)
+		//grantDatabaseBlockHeight
 		grantdb << grantDatabaseBlockHeight << "\n";
 		
-		//SECTION: Balances
-		//
-		//NOTE: This code writes the second line of the grantdb.txt file located in "%APPDATA%/Memorycoin/grantdb.dat"(Windows).
-		//NOTE: How many items are in the grant DB array:
+		//Balances
 		grantdb << balances.size()<< "\n";
-		
-		//NOTE: Loop that writes all the balances, including the key and the value
-		//NOTE: Address,(skip line) amount of coins "detected" at address.
-		//
-		//TODO: These databases are written in order -- and alphabetically organized but optimized in any fashion.
-		for( it = balances.begin();
-			it != balances.end();
-			++it)
-		{
+		for(it=balances.begin(); it!=balances.end(); ++it){
 			grantdb << it->first << "\n" << it->second<< "\n";
 		}
 		
-		//SECTION: Voting Preferences
-		//
-		//NOTE: Loop that first writes the size of the Voting Preference database for the line - Per round, for how many offices there are.
-        for( int i = 0;
-			i < numberOfOffices;
-			i++)
-		{
-			//NOTE: Unusually small, there are a limited amount of voters in Memorycoin.
-			//DESIGN?: Voting function isn't used by the general public, mostly by VIP and Shareholders who want to carry an opinion in the block-chain.
+		//votingPreferences
+        for(int i=0;i<numberOfOffices;i++){
             grantdb << votingPreferences[i].size()<< "\n";
-			
-			//NOTE: votingPreferences is a large array.
-			//
-            for( vpit = votingPreferences[i].begin();
-				vpit != votingPreferences[i].end();
-				++vpit)
-			{
-				//NOTE: Address voted from: (key)
+            for(vpit=votingPreferences[i].begin(); vpit!=votingPreferences[i].end(); ++vpit){
                 grantdb << vpit->first << "\n";
-				
-				//NOTE: How many preferences are located in the array?
                 grantdb << vpit->second.size() << "\n";
-				
-				//NOTE: If there are any other votes in the respective voting preference database, also list them here.
-                for( it2 = vpit->second.begin();
-					it2 != vpit->second.end();
-					++it2 )
-				{
-					//NOTE: List the preference first, and then the office voted for.
+                for(it2=vpit->second.begin();it2!=vpit->second.end();++it2){
                     grantdb << it2->first << "\n" << it2->second<< "\n";
                 }
             }
         }
-		
+
 		grantdb.flush();
 		grantdb.close();
 }
 
-//SECTION - Deserialize the Grant DB.
-//
-bool deSerializeGrantDB( string filename, int64 maxWanted ){
-	//NOTE: This takes a while to load Grant DB.
-	//TODO: Disable debug information.
-	printf("De-Serialize Grant Info Database\n");
+bool deSerializeGrantDB(string filename, int64 maxWanted){
+
+	printf("DeSerialize Grant Info Database\n");
 	
 	std::string line;
 	std::string line2;
 	ifstream myfile;
 	
-	//NOTE: Open the file using ifstream object.
 	myfile.open (filename.c_str());	
-	
 	//ifstream myfile ("grantsdb.dat");
-	//NOTE: above line is commented out because of extra check to make sure grantDB can be opened.
-	
-	//NOTE: Rare error... only happens if client has a corrupt grantDB or does not exist.
-	//NOTE: Cannot open file. Looks like we have to start all over again.
-	if ( !myfile.is_open() ){
-		printf("Could not load Grant Info Database from %s\n",filename.c_str());
-		
-		return false;
-	}else if (myfile.is_open()){
-		//NOTE: Retrieve the latest grant database height.
-		//NOTE: Line #1
-		getline ( myfile, line );
-		//Get latest grant height
-		grantDatabaseBlockHeight = atoi64( line.c_str() );
-		
-		//TODO: Remove debug information.
+	if (myfile.is_open()){
+		getline (myfile,line);
+		grantDatabaseBlockHeight=atoi64(line.c_str());
 		printf("Deserialize Grant Info Database Found Height %llu\n",grantDatabaseBlockHeight);
 		
-		//NOTE: This condition disables the deserialization of the Grant DB.
-		//NOTE: maxWanted is an int64 passed to this function.
-		//NOTE: Only reads the first line before reading any more. Decreases load on non-grant blocks.
-        if( grantDatabaseBlockHeight > maxWanted ){
-            //NOTE: Don't load and reset grantDatabaseBlockHeight variable.
-			//NOTE: The block-chain was cleared out and not the grant database. Re-do Everything.
+        if(grantDatabaseBlockHeight>maxWanted){
+            //vote database later than required - don't load
             grantDatabaseBlockHeight=-1;
             myfile.close();
-			
             return false;
         }
-		//SECTION: Load Balances from file.
-		//
-		//NOTE: This line completely clears out the balances array.
-		//TODO: SERVER LOAD?!
+
+		//Balances
 		balances.clear();
-		
-		//NOTE: Line #2
-		//NOTE: Size of balances is a large array, 267K lines
-		//NOTE: Saves too much info.
-		//TODO: How can we make this smaller?
-		getline( myfile, line );
-		int64 balancesSize = atoi64( line.c_str() );
-		
-		//NOTE: This loop reads the third and fourth line.
-		for( int i = 0;
-			i < balancesSize;
-			i++)
-		{
-			getline( myfile, line );
-			getline( myfile, line2 );
-			//NOTE: Set balances[1st line] to the 2nd read line.
-			balances[ line ] = atoi64( line2.c_str() );
+		getline (myfile,line);
+		int64 balancesSize=atoi64(line.c_str());
+		for(int i=0;i<balancesSize;i++){
+			getline (myfile,line);
+			getline (myfile,line2);
+			balances[line]=atoi64(line2.c_str());
 		}
 		
-		//SECTION: Voting Preferences
-		//
-		//NOTE: Loop through all the offices that are currently active.
-		//TODO: If new officers are added, there could be an issue.
-        for( int i = 0;
-			i < numberOfOffices;
-			i++)
-		{
-			//NOTE: Working with a clear slate.
-            votingPreferences[ i ].clear();
-			//NOTE: Starts at the balancesSize*2 + 3 in the grantdb.dat file.
-			//NOTE: This is the size of the votingPreferences database. (who voted for who).
-            getline( myfile, line );
-            int64 votingPreferencesSize = atoi64( line.c_str() );
-            
-			//NOTE: Good enough loop.
-			for( int k = 0;
-				k < votingPreferencesSize;
-				k++)
-			{
-				//NOTE: line is the wallet address that voted for a specific candidate.
-                getline( myfile, line );
-                std::string vpAddress = line;
-				//NOTE: line retrieves the size of the address' preference file.
-                getline( myfile, line );
-                int64 vpAddressSize = atoi64( line.c_str() );
-				
-				//NOTE: loop through data in address' preference 'array'.
-                for( int j = 0;
-					j < vpAddressSize;
-					j++)
-				{
-					//NOTE: Retrieve vote preference.
-                    getline( myfile, line );
-					
-					//NOTE: Retrieve voting address associated with preference.
-                    getline( myfile, line2 );
-                    
-					//NOTE: Associate this data with the votingPreferences Array.
-					votingPreferences[ i ][ vpAddress ][ atoi64( line.c_str() ) ] = line2;
+		//votingPreferences
+        for(int i=0;i<numberOfOffices;i++){
+            votingPreferences[i].clear();
+            getline (myfile,line);
+            int64 votingPreferencesSize=atoi64(line.c_str());
+            for(int k=0;k<votingPreferencesSize;k++){
+                getline (myfile,line);
+                std::string vpAddress=line;
+                getline (myfile,line);
+                int64 vpAddressSize=atoi64(line.c_str());
+			
+                for(int j=0;j<vpAddressSize;j++){
+                    getline (myfile,line);
+                    getline (myfile,line2);
+                    votingPreferences[i][vpAddress][atoi64(line.c_str())]=line2;
                 }
 		
             }
         }
-		
+				
 		myfile.close();
 		
 		//Set the pointer to next block to process
-		//NOTE: This loop sets the next block to process.
-		//NOTE: First sets the gdBlockPointer variable to the genesis (1) block.
-		//NOTE: If pindexGenesisBlock is not set after declaration, gdBlockPointer will be NULL.
-		gdBlockPointer = pindexGenesisBlock;
-		
-		//NOTE: This loop checks if the blocks are valid and the next one is available.
-		for( int i = 0;
-			i != grantDatabaseBlockHeight;
-			i++)
-		{
-			//NOTE: Check if gdBlockPointer is defined and not NULL.
-            if( gdBlockPointer->pnext == NULL ){
-				printf("Insufficent number of blocks loaded %s\n", filename.c_str() );
-				return false;
-			}
-			
-			gdBlockPointer = gdBlockPointer->pnext;
+		gdBlockPointer=pindexGenesisBlock;
+		for(int i=0;i<grantDatabaseBlockHeight;i++){
+            if(gdBlockPointer->pnext==NULL){
+                printf("Insufficent number of blocks loaded %s\n",filename.c_str());
+                return false;
+            }
+			gdBlockPointer=gdBlockPointer->pnext;
 		}
-		//NOTE: Everything worked out fine. database has been opened, all data has been loaded, closed, and the next block is available.
-	
 		return true;
+	}else{
+		printf("Could not load Grant Info Database from %s\n",filename.c_str());
+		return false;
 	}
+
 }
 
 
 bool getGrantAwards(int64 nHeight){
 	//nHeight is the current block height
-	if( !isGrantAwardBlock( nHeight ) ){
+	if(!isGrantAwardBlock(nHeight)){
 		printf("Error - calling getgrantawards for non grant award block");
 		return false;
-	}else{
-		return ensureGrantDatabaseUptoDate( nHeight );
 	}
+	return ensureGrantDatabaseUptoDate(nHeight);
 }
 
 bool ensureGrantDatabaseUptoDate(int64 nHeight){
-	//NOTE: This sets up the initial database
-	
+
     //This should always be true on startup
-    if( grantDatabaseBlockHeight == -1 ){
-			//string newCV="xxx";
-		//NOTE: voting prefix is second part after (originally MVTE)
-		
-		
+    if(getGrantDatabaseBlockHeight()==-1){
+        string newCV="xxx";
         //Only count custom vote if re-indexing
-		//NOTE: We will note be using a custom vote prefix any longer.
-		/*
-        if(getGrantDatabaseBlockHeight()==-1 && (GetBoolArg("-reindex"),false)){
+        if(GetBoolArg("-reindex"),false){
             newCV=GetArg("-customvoteprefix",newCV);
             printf("customvoteprefix:%s\n",newCV.c_str());
-        }*/
-		electedOffices[0] = "ceo";
-		electedOffices[1] = "cto";
-		electedOffices[2] = "cno";
-		electedOffices[3] = "cmo";
-		electedOffices[4] = "cso";
-		electedOffices[5] = "cha";
-		
-		//electedOffices[6] = newCV;
-		//6th [debug] is not necessary.
-        //electedOffices[6]=newCV;
-    }
-	
-	//NOTE: set up option for V3
-    //NOTE: nHeight is the current block height
-    //NOTE: (v2) requiredgrantdatabaseheight is 20 less than the current block
-	
-	//NOTE: Call v3 grant rewards AGAIN after 60 blocks.
-	//NOTE: Grants of the new supply will be granted to candidates on the hard-fork block.
-	int64 requiredGrantDatabaseHeight = 0;
-	
-	if( nHeight < V3FORKHEIGHT || nHeight == V3FORKHEIGHT ){
-		requiredGrantDatabaseHeight = (int64) nHeight - 20;
-	}else if( nHeight > V3FORKHEIGHT ) {
- 		requiredGrantDatabaseHeight = (int64) nHeight - GRANTBLOCKINTERVALV3;
-	}
-		/* else {
-		//TODO: V3.1 Options
-	}*/
- 	printf("=== Memorycoin Client: Making sure that Grant Database is up to date. ===\n=== Required Height of Database: %lld ===\n",requiredGrantDatabaseHeight);
-    //Maybe we don't have to count votes from the start - let's check if there's a recent vote database stored
-    if( grantDatabaseBlockHeight == -1){
-		/*if (nHeight < V3FORKHEIGHT){*/
-			deSerializeGrantDB( ( GetDataDir() / "blocks/grantdb.dat" ).string().c_str(), requiredGrantDatabaseHeight );
-			//printf("deserialized vote database:\n");
-		/*}else if (nHeight > V3FORKHEIGHT - 1){
-			deSerializeGrantDB( ( GetDataDir() / "blocks/grantdbv3.dat" ).string().c_str(), requiredGrantDatabaseHeight );
-		}*/
-	}
- 
-    if( grantDatabaseBlockHeight > requiredGrantDatabaseHeight ){
-        printf("Grant database has processed too many blocks. Needs to be rebuilt. %lld", nHeight );
-        
-		balances.clear();
-        
-		for( int i = 0;
-			i < numberOfOffices + 1;
-			i++)
-		{
-            votingPreferences[ i ].clear();
         }
-        gdBlockPointer = pindexGenesisBlock;
-        grantDatabaseBlockHeight = -1;
-		
-	}
+        electedOffices[0]="ceo";
+        electedOffices[1]="cto";
+        electedOffices[2]="cno";
+        electedOffices[3]="cmo";
+        electedOffices[4]="cso";
+        electedOffices[5]="cha";
+        electedOffices[6]=newCV;
+    }
+
+    //nHeight is the current block height
+    //requiredgrantdatabaseheight is 20 less than the current block
+    int64 requiredGrantDatabaseHeight=nHeight-GRANTBLOCKINTERVAL;
+    printf("Ensure grant database up to date %llu\n",requiredGrantDatabaseHeight);
+
+    //Maybe we don't have to count votes from the start - let's check if there's a recent vote database stored
+    if(getGrantDatabaseBlockHeight()==-1){
+        deSerializeGrantDB((GetDataDir() / "blocks/grantdb.dat").string().c_str(),requiredGrantDatabaseHeight);
+        //printf("deserialized vote database:\n");
+    }
+
+    /*
+    if(getGrantDatabaseBlockHeight()>requiredGrantDatabaseHeight){
+        printf("Grant database has processed too many blocks. Needs to be rebuilt. %llu",nHeight);
+        balances.clear();
+        for(int i=0;i<numberOfOffices+1;i++){
+            votingPreferences[i].clear();
+        }
+        gdBlockPointer=pindexGenesisBlock;
+        grantDatabaseBlockHeight=-1;
+    }*/
 	
-    while( grantDatabaseBlockHeight < requiredGrantDatabaseHeight ){
+    while(getGrantDatabaseBlockHeight()<requiredGrantDatabaseHeight){
         processNextBlockIntoGrantDatabase();
-	}
-	
+    }
     return true;
 		
 }
 
+
+
+
+
+int64 getGrantDatabaseBlockHeight(){
+	return grantDatabaseBlockHeight;
+}
+
+
 int getOfficeNumberFromAddress(string grantVoteAddress, int64 nHeight){
-	//printf("getOfficeNumberFromAddress\n");
-	if ( 
-		( /*nHeight < V3FORKHEIGHT 
-			&& */
-		!startsWith( grantVoteAddress.c_str(), "MVTE" ) ) 
-	//NOTE: NOT CHANGING PREFIX.
-	/*|| 
-		( nHeight > ( V3FORKHEIGHT - 1 ) 
-			&& 
-		!startsWith( grantVoteAddress.c_str(), GRANTPREFIXV3.c_str() ) )*/ )
-	{
-		//printf("getOfficeNumberFromAddress: Fail - 1\n");
+	if (!startsWith(grantVoteAddress.c_str(),(nHeight > V3FORKHEIGHT ? GRANTPREFIXNEW : GRANTPREFIX).c_str())){
 		return -1;
 	}
-	
-	//NOTE: this loop is horrible
-	//TODO: CASE SYSTEM
-	for( int i = 0;
-		i < numberOfOffices + 1;
-		i++)
-	{
-	//printf("substring %s\n",grantVoteAddress.substr(4,3).c_str());
-	//NOTE: Not changing prefix.
-		if ( 
-			( /*nHeight < V3FORKHEIGHT 
-				&&*/
-			grantVoteAddress.substr(4,3) == electedOffices[i] ) 
-		/*|| 
-			(nHeight > (V3FORKHEIGHT-1)
-				&& 
-			grantVoteAddress.substr(3,3) == electedOffices[i] )*/)
-		{
-			//printf("getOfficeNumberFromAddress: Pass\n");
+    for(int i=0;i<numberOfOffices+1;i++){
+		//printf("substring %s\n",grantVoteAddress.substr(4,3).c_str());
+		if(grantVoteAddress.substr(nHeight > V3FORKHEIGHT ? 3 : 4,3)==electedOffices[i]){
 			return i;
 		}
 	}
-	//NOTE: Negative
-	//printf("getOfficeNumberFromAddress: Fail2\n");
 	return -1;
 }
 
 void printVotingPrefs(std::string address){
-
     //I don't know why, this is compiling, but crashing
     /*std::map<int64, std::string> thisBallot=ballots.find(address)->second;
     if(thisBallot.begin()==thisBallot.end()){
@@ -6458,186 +5616,103 @@ void printVotingPrefs(std::string address){
     //This is slow and iterates too much, but on the plus side it doesn't crash the program.
     //This crash probably caused by eliminate candidate corrupting the ballot structure.
     //Should be safe to use more efficient code after fork
-	
-    int pref = 1;
-    for( ballotit = ballots.begin(); 
-		ballotit != ballots.end();
-		++ballotit){
-	if( address == ballotit->first )
-		{
-           for( svpit4 = ballotit->second.begin();
-				svpit4 != ballotit->second.end();
-				++svpit4)
-			{
-				grantAwardsOutput<<"--Preference "<<pref<<" "<<svpit4->first<<" "<<svpit4->second.c_str()<<" \n";
-				pref++;
-			}
-		}
-	}
-		
+    int pref=1;
+    for(ballotit=ballots.begin(); ballotit!=ballots.end(); ++ballotit){
+        if(address==ballotit->first){
+            for(svpit4=ballotit->second.begin();svpit4!=ballotit->second.end();++svpit4){
+                grantAwardsOutput<<"--Preference "<<pref<<" "<<svpit4->first<<" "<<svpit4->second.c_str()<<" \n";
+                pref++;
+            }
+        }
+    }
+
 }
 
 void processNextBlockIntoGrantDatabase(){
 
 	//printf("processNextBlockIntoGrantDatabase %d\n",grantDatabaseBlockHeight+1);
 	
-	//NOTE: Process the latest block.
 	CBlock block;
-	//If it's the first block, we'll start with the Genesis Block
-	if( gdBlockPointer != NULL ){
-		gdBlockPointer = gdBlockPointer->pnext;
-	}else{
-		gdBlockPointer = pindexGenesisBlock;
-	}
 	
+	//If it's the first block, we'll start with the Genesis Block
+	if(gdBlockPointer==NULL){
+		gdBlockPointer=pindexGenesisBlock;
+	}else{
+		gdBlockPointer=gdBlockPointer->pnext;
+	}
 	block.ReadFromDisk(gdBlockPointer);
 	//ReadBlockFromDisk(block, gdBlockPointer);
         //block.ReadFromDisk(gdBlockPointer,true); //Litecoin codebase method
 	
 	
 	//Look at all transactions in the block to update balances and see if they contain voting preferences
-	//NOTE: This should be done on a NEEDto basis.
-	for (unsigned int i = 0; 
-		i < block.vtx.size(); 
-		i++)
-	{
-		std::map<std::string,int64 > votes;
+	for (unsigned int i = 0; i <block.vtx.size(); i++){
 		
+		std::map<std::string,int64 > votes;
 		std::map<std::string,int64 >::iterator votesit;
 		
-		//Deal with outputs first - increase balances AND note what the votes are
-		//the file has 350k lines as of this moment.
-		for (unsigned int j = 0; 
-			j < block.vtx[i].vout.size();
-			j++)
-		{
+		//Deal with outputs first - increase balances and note what the votes are
+		for (unsigned int j = 0; j <block.vtx[i].vout.size(); j++){
 			CTxDestination address;
+			ExtractDestination(block.vtx[i].vout[j].scriptPubKey,address);
 			
-			ExtractDestination( block.vtx[ i ].vout[ j ].scriptPubKey, address );
-			
-			string receiveAddress = CMemorycoinAddress( address ).ToString().c_str();
-			
-			//Grab the amount of coins "Received to this address"
-			//NOTE:
-			//https://bitcointalk.org/index.php?topic=115488.msg1246315#msg1246315
-			int64 theAmount = block.vtx[ i ].vout[ j ].nValue;
+			string receiveAddress=CMemorycoinAddress(address).ToString().c_str();
+			int64 theAmount=block.vtx[i].vout[j].nValue;
 			
 			//Update balance - if no previous balance, should start at 0
-			balances[ receiveAddress ] = balances[ receiveAddress ] + theAmount;				
+			balances[receiveAddress]=balances[receiveAddress]+theAmount;				
 			
 			//Note any voting preferences made in the outputs
-			//NOTE: THIS IS CALLED FOR EVERY TRANSACTION (wow.)
-			//printf("Note any voting preferences made in the outputs\n");
-			/*if(
-				//NOTE: Easiest checks first.
-				//NOTE: Is the amount between 0 and 10 satoshi's ??
-				theAmount < 10 
-			&& 
-				theAmount > 0
-			&& 
-				( gdBlockPointer->nHeight < V3FORKHEIGHT
-				&&
-				startsWith( receiveAddress.c_str(), "MVTE" ) ) 
-			||
-				( gdBlockPointer->nHeight > (V3FORKHEIGHT - 1)
-				&& 
-					startsWith( receiveAddress.c_str(), "MMC" ) ) )
-			{
-				//printf("We found a vote!: Vote found Preference: %llu\n",theAmount);
+			if(startsWith(receiveAddress.c_str(),(gdBlockPointer->nHeight > V3FORKHEIGHT ? GRANTPREFIXNEW : GRANTPREFIX).c_str()) && theAmount<10 && theAmount>0){
+				//printf("Vote found Amount: %llu\n",theAmount);
 				//Voting output - if the same address is voted a number of times in the same transaction, only the last one is counted
-				votes[ receiveAddress ] = theAmount;
-			}	*/
-			
-			if(
-				//NOTE: Easiest checks first.
-				//NOTE: Is the amount between 0 and 10 satoshi's ??
-				theAmount < 10 
-			&& 
-				theAmount > 0
-			&& 
-				startsWith( receiveAddress.c_str(), "MVTE" ) )
-			{
-				votes[ receiveAddress ] = theAmount;
-			}
+				votes[receiveAddress]=theAmount;
+			}			
 		}
 		
-		//Deal with the inputs - reduce balances AND apply voting preferences noted in the outputs.
-		//
-		for ( unsigned int j = 0; 
-			j < block.vtx[ i ].vin.size();
-			j++ )
-		{
-			if( !(block.vtx[ i ].IsCoinBase() ) )
-			{
-				//NOTE: No input to reduce if it is a coinbase transaction.
-				
+		//Deal with the inputs - reduce balances and apply voting preferences noted in the outputs
+		for (unsigned int j = 0; j <block.vtx[i].vin.size(); j++){
+			if(block.vtx[i].IsCoinBase()){
+				//This is a coinbase transaction, there is no input to reduce
+			}else{
 				CTransaction txPrev;
 				uint256 hashBlock;
-				
-				GetTransaction( block.vtx[ i ].vin[ j ].prevout.hash, txPrev, hashBlock );
-				
+				GetTransaction(block.vtx[i].vin[j].prevout.hash,txPrev,hashBlock);
 				CTxDestination source;
-				
-				ExtractDestination( txPrev.vout[ block.vtx[ i ].vin[ j ].prevout.n ].scriptPubKey, source );
-				
-				string spendAddress = CMemorycoinAddress( source ).ToString().c_str();
-				
-				int64 theAmount = txPrev.vout[ block.vtx[ i ].vin[ j ].prevout.n ].nValue;
+				ExtractDestination(txPrev.vout[block.vtx[i].vin[j].prevout.n].scriptPubKey,source);			
+				string spendAddress=CMemorycoinAddress(source).ToString().c_str();
+				int64 theAmount=txPrev.vout[block.vtx[i].vin[j].prevout.n].nValue;
 				
 				//Reduce balance
-				balances[ spendAddress ] = balances[ spendAddress ] - theAmount;
+				balances[spendAddress]=balances[spendAddress]-theAmount;
 	
 				//If any of the outputs were votes
-				//NOTE: Run through the 'votes' table.
-				//NOTE: first= Key, second= Value
-				for( votesit = votes.begin();
-					votesit != votes.end(); 
-					++votesit)
-				{
-					//NOTE: (Why are we still debugging?)
-                    //printf("Vote found: %s, %llu\n",votesit->first.c_str(),votesit->second);
-					string grantVoteAddress = ( votesit->first );
-					int electedOfficeNumber = getOfficeNumberFromAddress( grantVoteAddress, gdBlockPointer->nHeight );
-					
-					if( electedOfficeNumber != -1 ){
-						//NOTE: running the grant database is memory intensive and can cause an issue of taking up too much memory on the node.
-						//TODO: There may be a better way to set this database up.
-                        //printf("Vote added: %d %s, %llu\n",electedOfficeNumber,votesit->first.c_str(),votesit->second);
-                        votingPreferences[ electedOfficeNumber ][ spendAddress ][ votesit->second ] = grantVoteAddress;
-						
-                        //printf("Voting Preference Size: %d \n",votingPreferences[electedOfficeNumber].size());
+				for(votesit=votes.begin(); votesit!=votes.end(); ++votesit){
+                    printf("Vote found: %s, %llu\n",votesit->first.c_str(),votesit->second);
+					string grantVoteAddress=(votesit->first);
+					int electedOfficeNumber = getOfficeNumberFromAddress(grantVoteAddress, gdBlockPointer->nHeight);
+					if(electedOfficeNumber>-1){
+                        printf("Vote added: %d %s, %llu\n",electedOfficeNumber,votesit->first.c_str(),votesit->second);
+                        votingPreferences[electedOfficeNumber][spendAddress][votesit->second] = grantVoteAddress;
+                        printf("Size: %d \n",votingPreferences[electedOfficeNumber].size());
                     }
-					
 				}
-				
+	
 			}
-			
 		}
-		
 	}
-	//NOTE: INCREASE THE GRANTDATABASEBLOCK HEIGHT
-	//NOTE: Run after the above loop scans through the size of the block for every transaction.
+	
 	grantDatabaseBlockHeight++;
 	
-	if ( 
-		( gdBlockPointer->nHeight < V3FORKHEIGHT 
-		|| 
-		gdBlockPointer->nHeight == V3FORKHEIGHT ) 
-	&& 
-		isGrantAwardBlock( grantDatabaseBlockHeight + 20 ) ) 
-	{
-		getGrantAwardsFromDatabaseForBlock( grantDatabaseBlockHeight + 20 );
-		serializeGrantDB( (GetDataDir() / "blocks/grantdb.dat" ).string().c_str() );
+	if(isGrantAwardBlock(grantDatabaseBlockHeight+GRANTBLOCKINTERVAL)){
+		getGrantAwardsFromDatabaseForBlock(grantDatabaseBlockHeight+GRANTBLOCKINTERVAL);
 		//Save the grant database to disk - these need to be persisted
-		//TODO: This database may pose a security risk in which the grant database can be compromised and changed.
-		//NOTE: There is a better way to store this database and encrypt it...
-		//NOTE: unnecessary data must be removed...
+        serializeGrantDB((GetDataDir() / "blocks/grantdb.dat").string().c_str());
+
         //check deserialization is working
         //deSerializeGrantDB((GetDataDir() / "blocks/grantdb.dat").string().c_str());
-		//printf("2 current block on:%llu\n",gdBlockPointer->GetBlockHash());	
-	}else if (gdBlockPointer->nHeight > V3FORKHEIGHT ){
-		getGrantAwardsFromDatabaseForBlock( grantDatabaseBlockHeight + GRANTBLOCKINTERVALV3 );
-		serializeGrantDB( (GetDataDir() / "blocks/grantdb.dat" ).string().c_str() );
+		//printf("2 current block on:%llu\n",gdBlockPointer->GetBlockHash());
+		
 	}
 }
 
@@ -6647,68 +5722,52 @@ void printCandidateSupport(){
 	
 	grantAwardsOutput<<"\nWinner Support: \n";
 		
-	for( ballotit = supportVotes.begin(); 
-		ballotit != supportVotes.end(); 
-		++ballotit){
+	for(ballotit=supportVotes.begin(); ballotit!=supportVotes.end(); ++ballotit){
 		grantAwardsOutput<<"\n--"<<ballotit->first<<" \n";
-		for( itpv2 = ballotit->second.rbegin();
-			itpv2 != ballotit->second.rend();
-			++itpv2)
-		{
-			grantAwardsOutput<<"-->("<< itpv2->first/COIN <<"/"<<balances[itpv2->second.c_str()]/COIN <<") "<<itpv2->second.c_str()<<" \n";
-		}	
+		for(itpv2=ballotit->second.rbegin();itpv2!=ballotit->second.rend();++itpv2){
+            grantAwardsOutput<<"-->("<< itpv2->first/COIN <<"/"<<balances[itpv2->second.c_str()]/COIN <<") "<<itpv2->second.c_str()<<" \n";
+		}		
 	}
 }
 
-void printBalances( int64 howMany, bool printVoting, bool printWasted ){
+void printBalances(int64 howMany, bool printVoting, bool printWasted){
 	grantAwardsOutput<<"---Current Balances------\n";
 	std::multimap<int64, std::string > sortByBalance;
 	
 	std::map<std::string,int64>::iterator itpv;
-	
 	std::map<int64,std::string>::reverse_iterator itpv2;
 	
-	for(itpv=balances.begin();
-		itpv!=balances.end();
-		++itpv)
-	{
+	for(itpv=balances.begin(); itpv!=balances.end(); ++itpv){
 		//int amt=(it->second)/COIN;
 		//sortByBalance[it->second]=it->first;
-		if( itpv->second > COIN ){
-			sortByBalance.insert( pair<int64, std::string>( itpv->second, itpv->first ) );
+		if(itpv->second>COIN){
+			sortByBalance.insert(pair<int64, std::string>(itpv->second,itpv->first));
 		}
 	}
 	
 	//printf("%d addresses with balances. Printing Top %d\n",balances.size(),howMany);
+	
 	std::multimap<int64, std::string >::reverse_iterator sbbit;
-	int64 count = 0;
-	for (sbbit =  sortByBalance.rbegin();
-		sbbit !=  sortByBalance.rend();
-		++sbbit)
-	{
-		if( howMany > count ){
+	int64 count=0;
+	for (sbbit =  sortByBalance.rbegin(); sbbit !=  sortByBalance.rend();++sbbit){
+		if(howMany>count){
 			grantAwardsOutput<<"\n->Balance:"<<sbbit->first/COIN<<" - "<<sbbit->second.c_str()<<"\n";
-			if( printWasted ){
-				for( itpv2 = electedVotes[ sbbit->second.c_str() ].rbegin();
-					itpv2!=electedVotes[ sbbit->second.c_str() ].rend();
-					++itpv2)
-				{
+			if(printWasted){
+				for(itpv2=electedVotes[sbbit->second.c_str()].rbegin(); itpv2!=electedVotes[sbbit->second.c_str()].rend(); ++itpv2){
 					grantAwardsOutput << "---->" << itpv2->first/COIN << " supported " << itpv2->second << "\n";		
 				}
-				
-				if( wastedVotes[ sbbit->second.c_str()] / COIN > 0 ){
+				if(wastedVotes[sbbit->second.c_str()]/COIN>0){
 					grantAwardsOutput<<"---->"<<wastedVotes[sbbit->second.c_str()]/COIN<<"  wasted (Add More Preferences)\n";
 				}
-				
-				if( votingPreferences[ 0 ].find( sbbit->second.c_str() ) == votingPreferences[ 0 ].end() ){
+				if(votingPreferences[0].find(sbbit->second.c_str())==votingPreferences[0].end()){
 					grantAwardsOutput<<"---->No Vote: (Add Some Voting Preferences)\n";
 				}
 			}
 			
-			if( printVoting ){
+			if(printVoting){
 				try{
-					printVotingPrefs( sbbit->second );
-				}catch ( std::exception &e ) {
+					printVotingPrefs(sbbit->second);
+				}catch (std::exception &e) {
 					grantAwardsOutput<<"Print Voting Prefs Exception\n";
 				}
 			}
@@ -6721,26 +5780,14 @@ void printBalances( int64 howMany, bool printVoting, bool printWasted ){
 
 bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 	
-    printf( " === Memorycoin Client === \ngetGrantAwardsFromDatabase %llu\n", nHeight );
-	//NOTE: ADD v3 Options here.
-	if (
-		( 		(nHeight < V3FORKHEIGHT
-				||
-				nHeight == V3FORKHEIGHT )
-			&& 
-		grantDatabaseBlockHeight != nHeight - 20)
-	||
-		( nHeight > V3FORKHEIGHT
-			&&
-		grantDatabaseBlockHeight != nHeight - GRANTBLOCKINTERVALV3) )
-	{ 
-        printf(" === Memorycoin Client === \ngetGrantAwardsFromDatabase is being called when no awards are due. %llu %llu\n",grantDatabaseBlockHeight,nHeight);
-
+    printf("getGrantAwardsFromDatabase %llu\n",nHeight);
+	if(grantDatabaseBlockHeight!=nHeight-GRANTBLOCKINTERVAL){
+        printf("getGrantAwardsFromDatabase is being call when no awards are due. %llu %llu\n",grantDatabaseBlockHeight,nHeight);
 		return false;
 	}
 	
 	debugVote = GetBoolArg("-debugvote", false);
-	if( debugVote ){
+	if(debugVote){
 		std::stringstream sstm;
 		sstm << "award" << setw(8) << std::setfill('0') << nHeight << ".txt";
 		string filename = sstm.str();
@@ -6754,142 +5801,103 @@ bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 		grantAwardsOutput.open ((GetDataDir() / "grantawards" / filename).string().c_str(), ios::trunc);}
 	//save to disk
 	
-	if( debugVote ){
-		grantAwardsOutput << "-------------:\nElection Count:\n-------------:\n\n";
-	}
+	if(debugVote)grantAwardsOutput << "-------------:\nElection Count:\n-------------:\n\n";
+	
 	//Clear from last time, ensure nothing left over
 
 	awardWinners.clear();
 	grantAwards.clear();
 
 		
-	for( int i = 0;
-		i < numberOfOffices + 1;
-		i++ )
-	{
-	//NOTE: CLEAR EVERYTHING HERE.
-		ballots.clear();
-		ballotBalances.clear();
-		ballotWeights.clear();
-		wastedVotes.clear();
-		electedVotes.clear();
-		supportVotes.clear();
-		
-		//Iterate through every vote
-		for( vpit = votingPreferences[i].begin();
-			vpit != votingPreferences[i].end();
-			++vpit)
-		{
-			int64 voterBalance = balances[ vpit->first ];
-			//Ignore balances of 0 - they play no part.
-			if( voterBalance > 0 ){
-				ballotBalances[ vpit->first ] = voterBalance;
-				ballotWeights[ vpit->first ] = 1.0;
-				
-				//Order preferences by coins sent - lowest number of coins has top preference
-				for( it2 = vpit->second.begin();
-					it2 != vpit->second.end();
-					++it2)
-				{
-					//Where a voter has voted for more than one preference with the same amount, only the last one (alphabetically) will be valid. The others are discarded.
-					ballots[ vpit->first ][ it2->first ] = it2->second;
-				}
-			}
-		}
-    //if(debugVote)printBalances(100,true,false);
-	//TODO: decrease intensity of this function.
-	getWinnersFromBallots( nHeight, i );
-
-	//At this point, we know the vote winners - now to see if grants are to be awarded
-	//nheight is the current blockheight
-		if( i < numberOfOffices ){
-			for(int i = 0;
-				i<1;
-				i++)
-			{
-				grantAwards[ awardWinners[ i ] ] = grantAwards[ awardWinners[ i ] ] + GetGrantValue( nHeight );
-				if( debugVote ){
-					grantAwardsOutput << "Add grant award to Block "<<awardWinners[i].c_str()<<" ("<<GetGrantValue(nHeight)/COIN<<")\n";
-				}
-			}
-		}
-		if( debugVote ){
-			printCandidateSupport();
-		}
-	}	
-	//if(debugVote)printBalances(100,false,true);
-	if( debugVote ){
-		grantAwardsOutput.close();
-	}
+for(int i=0;i<numberOfOffices+1;i++){
+	ballots.clear();
+	ballotBalances.clear();
+	ballotWeights.clear();
+	wastedVotes.clear();
+	electedVotes.clear();
+	supportVotes.clear();
 	
+	//Iterate through every vote
+	for(vpit=votingPreferences[i].begin(); vpit!=votingPreferences[i].end(); ++vpit){
+		int64 voterBalance=balances[vpit->first];
+		//Ignore balances of 0 - they play no part.
+		if(voterBalance>0){
+			ballotBalances[vpit->first]=voterBalance;
+			ballotWeights[vpit->first]=1.0;
+			
+			//Order preferences by coins sent - lowest number of coins has top preference
+			for(it2=vpit->second.begin(); it2!=vpit->second.end(); ++it2){
+				//Where a voter has voted for more than one preference with the same amount, only the last one (alphabetically) will be valid. The others are discarded.
+				ballots[vpit->first][it2->first]=it2->second;
+			}
+		}else if (voterBalance<0){
+			printf("Something wrong here - balance is less than zero - this should never occur\n");
+			printf("Voter: %s %llu\n",vpit->first.c_str(),voterBalance);
+		}
+	}
+
+    //if(debugVote)printBalances(100,true,false);
+	getWinnersFromBallots(nHeight,i);
+
+	//At this point, we know the vote winners - now to see if grants are to be awarded - note nheight is the current blockheight
+    if(i<numberOfOffices){
+        for(int i=0;i<getNUMBEROFAWARDS(nHeight);i++){
+            grantAwards[awardWinners[i]]=grantAwards[awardWinners[i]]+GetGrantValue(nHeight);
+            if(debugVote)grantAwardsOutput << "Add grant award to Block "<<awardWinners[i].c_str()<<" ("<<GetGrantValue(nHeight)/COIN<<")\n";
+        }
+    }
+	if(debugVote)printCandidateSupport();
+	
+}	
+
+
+	//if(debugVote)printBalances(100,false,true);
+	if(debugVote){grantAwardsOutput.close();}
 	return true;
 }
 
-void getWinnersFromBallots( int64 nHeight, int officeNumber ){
+void getWinnersFromBallots(int64 nHeight, int officeNumber){
 
-	if( debugVote ){
-		grantAwardsOutput <<"\n\n\n--------"<< electedOffices[ officeNumber ]<<"--------\n";
-	}
-	if( debugVoteExtra ){
-		printBallots();
-	}
-	//Calculate Total in all balances
-	int64 tally = 0;
-	for( it = balances.begin();
-		it != balances.end();
-		++it)
-	{
-		tally = tally + it->second;
-	}
+	if(debugVote)grantAwardsOutput <<"\n\n\n--------"<< electedOffices[officeNumber]<<"--------\n";
 	
-	if( debugVote ){
-		grantAwardsOutput <<"Total coin issued: " << tally/COIN <<"\n";
+	
+	if(debugVoteExtra)printBallots();
+	
+	//Calculate Total in all balances
+	int64 tally=0;
+	for(it=balances.begin(); it!=balances.end(); ++it){
+		tally=tally+it->second;
 	}
+	if(debugVote)grantAwardsOutput <<"Total coin issued: " << tally/COIN <<"\n";
+
 	//Calculate Total of balances of voters
 	int64 totalOfVoterBalances=0;
-	
-	for( it = ballotBalances.begin();
-		it != ballotBalances.end();
-		++it)
-	{
-		totalOfVoterBalances = totalOfVoterBalances + it->second;
+	for(it=ballotBalances.begin(); it!=ballotBalances.end(); ++it){
+		totalOfVoterBalances=totalOfVoterBalances+it->second;
 	}
+	if(debugVote)grantAwardsOutput <<"Total of Voters' Balances: "<<totalOfVoterBalances/COIN<<"\n";
 	
-	if( debugVote ){
-		grantAwardsOutput <<"Total of Voters' Balances: "<<totalOfVoterBalances/COIN<<"\n";
-	}
 	//Turnout
-	if( debugVote ){
-		grantAwardsOutput <<"Percentage of total issued coin voting: "<<(totalOfVoterBalances*100)/tally<<" percent\n";
-	}
+	if(debugVote)grantAwardsOutput <<"Percentage of total issued coin voting: "<<(totalOfVoterBalances*100)/tally<<" percent\n";
+	
 	//Calculate Droop Quota
-	int64 droopQuota = ( totalOfVoterBalances / ( 1 + 1 ) ) + 1;
-	if( debugVote ){
-		grantAwardsOutput <<"Droop Quota: "<<droopQuota/COIN<<"\n";
-	}
+	int64 droopQuota = (totalOfVoterBalances/(getNUMBEROFAWARDS(nHeight)+1))+1;
+	if(debugVote)grantAwardsOutput <<"Droop Quota: "<<droopQuota/COIN<<"\n";
+	
+	
+	
 	//Conduct voting rounds until all grants are awarded
-	for(int i = 1;
-		i > 0;
-		i--)
-	{
+	for(int i=getNUMBEROFAWARDS(nHeight);i>0;i--){
 		string electedCandidate;
-		
-		int voteRoundNumber = 0;
-		if( debugVote ){
-			grantAwardsOutput <<"-------------:\nRound:"<<1-i<<"\n";
-		}
-		
-		if( debugVoteExtra ){
-			printBallots();
-		}
-		
+		int voteRoundNumber=0;
+		if(debugVote)grantAwardsOutput <<"-------------:\nRound:"<<getNUMBEROFAWARDS(nHeight)-i<<"\n";
+		if(debugVoteExtra)printBallots();
 		do{
 			//if(debugVote)grantAwardsOutput <<"-------------:\nElimination Round:%d\n",voteRoundNumber);
-			electedCandidate = electOrEliminate( droopQuota, i );
+			electedCandidate=electOrEliminate(droopQuota, i);
 			voteRoundNumber++;
-		}while( electedCandidate == "" );
-		
-		awardWinners[ ( i - 1 ) *- 1 ] = electedCandidate;
+		}while(electedCandidate=="");
+		awardWinners[(i-getNUMBEROFAWARDS(nHeight))*-1]=electedCandidate;
 	}
 	//if(debugVote)grantAwardsOutput <<"--------End Grant Voting--------\n";
 	
@@ -6897,105 +5905,81 @@ void getWinnersFromBallots( int64 nHeight, int officeNumber ){
 
 //Sum total of first preferences
 std::map<std::string,int64 > preferenceCount;
-int64 numberCandidatesEliminated = 0;	
+int64 numberCandidatesEliminated=0;	
 		
-string electOrEliminate( int64 droopQuota, unsigned int requiredCandidates ){
+string	electOrEliminate(int64 droopQuota, unsigned int requiredCandidates){
 
 	std::map<std::string,int64 >::iterator tpcit;
+	
+	
 	
 	//Recalculate the preferences each time as winners and losers are removed from ballots.
 	preferenceCount.clear();
 	
 	//Calculate support for each candidate. The balance X the weighting for each voter is applied to the total for the candidate currently at the top of the voter's ballot  
-	for( ballotit = ballots.begin();
-		ballotit != ballots.end();
-		++ballotit)
-	{
+	for(ballotit=ballots.begin(); ballotit!=ballots.end(); ++ballotit){
 		//Check: Multiplying int64 by double here, and representing answer as int64.
-		preferenceCount[ ballotit->second.begin()->second ] += ( ballotBalances[ ballotit->first ] * ballotWeights[ ballotit->first ] );
+		preferenceCount[ballotit->second.begin()->second]+=(ballotBalances[ballotit->first]*ballotWeights[ballotit->first]);
 	}
 	
 	//if(debugVote)grantAwardsOutput <<"Number of Remaining Candidates: %d\n",preferenceCount.size());
 	
 	//Find out which remaining candidate has the greatest and least support
 	string topOfThePoll;
-	int64 topOfThePollAmount = 0;	
+	int64 topOfThePollAmount=0;	
 	string bottomOfThePoll;
-	int64 bottomOfThePollAmount = 9223372036854775807;
+	int64 bottomOfThePollAmount=9223372036854775807;
 
 		
-	for( tpcit = preferenceCount.begin();
-		tpcit != preferenceCount.end();
-		++tpcit)
-	{
+	for(tpcit=preferenceCount.begin(); tpcit!=preferenceCount.end(); ++tpcit){
 		//Check:When competing candidates have equal votes, the first (sorted by Map) will be chosen for top and bottom of the poll.
-		if( tpcit->second > topOfThePollAmount ){
-			topOfThePollAmount = tpcit->second;
-			topOfThePoll = tpcit->first;
+		if(tpcit->second>topOfThePollAmount){
+			topOfThePollAmount=tpcit->second;
+			topOfThePoll=tpcit->first;
 		}
-		
-		if( tpcit->second < bottomOfThePollAmount ){
-			bottomOfThePollAmount = tpcit->second;
-			bottomOfThePoll = tpcit->first;
+		if(tpcit->second<bottomOfThePollAmount){
+			bottomOfThePollAmount=tpcit->second;
+			bottomOfThePoll=tpcit->first;
 		}
 		//if(tpcit->second>droopQuota/10){
 		//	if(debugVote)grantAwardsOutput <<"Support: "<<tpcit->first<<"("<<tpcit->second/COIN<<")\n";
 		//}
+		
 	}
 	
 	//Purely for debugging/information
-	if( topOfThePollAmount >= droopQuota 
-	|| 
-		requiredCandidates >= preferenceCount.size() 
-	||
-		bottomOfThePollAmount > droopQuota / 10)
-	{
-		if( debugVote ){
-			grantAwardsOutput <<"Candidates with votes equalling more than 10% of Droop quota\n";
-		}
-		
-		for( tpcit = preferenceCount.begin();
-			tpcit != preferenceCount.end();
-			++tpcit)
-		{
-			if( tpcit->second > droopQuota / 10 ){
-				if( debugVote ){
-					grantAwardsOutput <<"Support: "<<tpcit->first<<" ("<<tpcit->second/COIN<<")\n";
-				}
+	if(topOfThePollAmount>=droopQuota || requiredCandidates>=preferenceCount.size() ||bottomOfThePollAmount>droopQuota/10){
+		if(debugVote)grantAwardsOutput <<"Candidates with votes equalling more than 10% of Droop quota\n";
+		for(tpcit=preferenceCount.begin(); tpcit!=preferenceCount.end(); ++tpcit){
+			if(tpcit->second>droopQuota/10){
+				if(debugVote)grantAwardsOutput <<"Support: "<<tpcit->first<<" ("<<tpcit->second/COIN<<")\n";
 			}
+		
 		}
 	}
+	
 	//if(debugVote)grantAwardsOutput <<"Bottom Preference Votes: %s %llu\n",bottomOfThePoll.c_str(),bottomOfThePollAmount/COIN);
 	
-	if( topOfThePollAmount == 0 ){
+	if(topOfThePollAmount==0){
 		//No ballots left -end - 
-		if( debugVote ){
-			grantAwardsOutput <<"No Candidates with support remaining. Grant awarded to unspendable address MVTEceo1111111111111111111111TvNrt\n";
-		}
-		
+		if(debugVote)grantAwardsOutput <<"No Candidates with support remaining. Grant awarded to unspendable address MVTEceo1111111111111111111111TvNrt\n";
 		return "MVTEceo1111111111111111111111TvNrt";
 	}
 	
-	if( topOfThePollAmount >= droopQuota
-	|| 
-		requiredCandidates >= preferenceCount.size() )
-	{
+	if(topOfThePollAmount>=droopQuota || requiredCandidates>=preferenceCount.size()){
 		
 		//Note: This is a simplified Gregory Transfer Value - ignoring ballots where there are no other hopefuls.
-		double gregorySurplusTransferValue = ( (double)topOfThePollAmount - (double)droopQuota ) / (double)topOfThePollAmount;
+		double gregorySurplusTransferValue=((double)topOfThePollAmount-(double)droopQuota)/(double)topOfThePollAmount;
 		
 		//Don't want this value to be negative when candidates are elected with less than a quota
-		if( gregorySurplusTransferValue < 0 ){
-			gregorySurplusTransferValue = 0;
-		}
+		if(gregorySurplusTransferValue<0){gregorySurplusTransferValue=0;}
 		
-		electCandidate( topOfThePoll, gregorySurplusTransferValue, (requiredCandidates == 1) );
-		
+		electCandidate(topOfThePoll,gregorySurplusTransferValue,(requiredCandidates==1));
 		//if(debugVote)grantAwardsOutput <<"Top Preference Votes: %s %llu\n",topOfThePoll.c_str(),topOfThePollAmount/COIN);	
-		if( debugVote ){
-			if( numberCandidatesEliminated > 0 ){
+		if(debugVote){
+			if(numberCandidatesEliminated>0){
 				grantAwardsOutput <<"Candidates Eliminated ("<<numberCandidatesEliminated<<")\n\n";
-				numberCandidatesEliminated = 0;
+				numberCandidatesEliminated=0;
 			}
 			grantAwardsOutput <<"Candidate Elected: "<<topOfThePoll.c_str()<<" ("<<topOfThePollAmount/COIN<<")\n";
 			grantAwardsOutput <<"Surplus Transfer Value: "<<gregorySurplusTransferValue<<"\n";				
@@ -7003,18 +5987,18 @@ string electOrEliminate( int64 droopQuota, unsigned int requiredCandidates ){
 		return topOfThePoll;
 		
 	}else{
-		eliminateCandidate( bottomOfThePoll, false );
-		if( debugVote ){
-			if( bottomOfThePollAmount > droopQuota / 10 ){
-				if( numberCandidatesEliminated > 0 ){
+		eliminateCandidate(bottomOfThePoll,false);
+		if(debugVote){
+			if(bottomOfThePollAmount>droopQuota/10){
+				if(numberCandidatesEliminated>0){
 					grantAwardsOutput <<"Candidates Eliminated ("<<numberCandidatesEliminated<<")\n";
-					numberCandidatesEliminated = 0;
+					numberCandidatesEliminated=0;
 				}
-				
 				grantAwardsOutput <<"Candidate Eliminated: "<<bottomOfThePoll.c_str()<<" ("<<bottomOfThePollAmount/COIN<<")\n\n";
 			}else{
 				numberCandidatesEliminated++;
 			}
+		
 		}
 		return "";
 	}	
@@ -7024,84 +6008,58 @@ string electOrEliminate( int64 droopQuota, unsigned int requiredCandidates ){
 
 std::map<int64, std::string>::iterator svpit2;
 
-void electCandidate( string topOfThePoll, 
-	double gregorySurplusTransferValue,
-	bool isLastCandidate )
-{
+void electCandidate(string topOfThePoll, double gregorySurplusTransferValue,bool isLastCandidate){
 	
 	//Apply fraction to weights where the candidate was top of the preference list
-	for( ballotit = ballots.begin();
-		ballotit != ballots.end();
-		++ballotit)
-	{
-		svpit2 = ballotit->second.begin();
-		if( svpit2->second == topOfThePoll ){
+	for(ballotit=ballots.begin(); ballotit!=ballots.end(); ++ballotit){
+		svpit2=ballotit->second.begin();
+		if(svpit2->second==topOfThePoll){
 			//Record how many votes went towards electing this candidate for each user
-			electedVotes[ ballotit->first ][ 
-				balances[ ballotit->first ] 
-				* 
-					( ballotWeights[ ballotit->first ] 
-					* 
-					( 1 - gregorySurplusTransferValue ) ) 
-				] = svpit2->second;
+			electedVotes[ballotit->first][balances[ballotit->first]*(ballotWeights[ballotit->first]*(1-gregorySurplusTransferValue))]=svpit2->second;
 			//Record the support for each candidate elected
-			supportVotes[ topOfThePoll ][ 
-				balances[ ballotit->first ]
-				*
-					( ballotWeights[ ballotit->first ]
-					* 
-					( 1 - gregorySurplusTransferValue ) ) 
-				] = ballotit->first;
+			supportVotes[topOfThePoll][balances[ballotit->first]*(ballotWeights[ballotit->first]*(1-gregorySurplusTransferValue))]=ballotit->first;
 			
 			//This voter had the elected candidate at the top of the ballot. Adjust weight for future preferences.
-			ballotWeights[ ballotit->first ] = ballotWeights[ ballotit->first ] * gregorySurplusTransferValue;
+			ballotWeights[ballotit->first]=ballotWeights[ballotit->first]*gregorySurplusTransferValue;
 		}
 	}
 	
 	//Remove candidate from all ballots - this includes where he may be far down the list of preferences
-	eliminateCandidate( topOfThePoll, isLastCandidate );
+	eliminateCandidate(topOfThePoll,isLastCandidate);
 }
 
-void eliminateCandidate( string removeid, bool isLastCandidate ){
-
+void eliminateCandidate(string removeid,bool isLastCandidate){
+	
+	
 	std::map<std::string, int64> ballotsToRemove;
 	std::map<std::string, int64>::iterator btrit;
 	
 	//Remove candidate from all ballots - note the candidate may be way down the preference list
-	for( ballotit = ballots.begin(); 
-		ballotit != ballots.end();
-		++ballotit)
-	{
-		int64 markForRemoval = 0;
+	for(ballotit=ballots.begin(); ballotit!=ballots.end(); ++ballotit){
+		int64 markForRemoval=0;
 			
-		for( svpit2 = ballotit->second.begin();
-			svpit2 != ballotit->second.end();
-			++svpit2)
-		{
-			if( svpit2->second == removeid ){
+		for(svpit2=ballotit->second.begin();svpit2!=ballotit->second.end();++svpit2){
+			if(svpit2->second==removeid){
 				//if(debugVote)grantAwardsOutput <<"1. Mark for Removal From Ballot: %s %d \n",removeid.c_str(),svpit2->first);
-				markForRemoval = svpit2->first;
+				markForRemoval=svpit2->first;
 			}
 		}
 		
-		if( markForRemoval != 0 ){
-			ballotit->second.erase( markForRemoval );
+		if(markForRemoval!=0){
+			ballotit->second.erase(markForRemoval);
 		}
 		
 		//Make a note of ballot to remove
-		if( ballotit->second.size() ==0 ){
-			if( !isLastCandidate ){
-				wastedVotes[ ballotit->first ] = ( ballotBalances[ ballotit->first ] * ballotWeights[ ballotit->first ] );
+		if(ballotit->second.size()==0){
+			if(!isLastCandidate){
+				wastedVotes[ballotit->first]=(ballotBalances[ballotit->first]*ballotWeights[ballotit->first]);
 			}
-			ballotsToRemove[ ballotit->first ] = 1;
+			ballotsToRemove[ballotit->first]=1;
 		}
 	}	
 	
-	for( btrit = ballotsToRemove.begin();
-		btrit != ballotsToRemove.end();
-		++btrit)
-	{
-		ballots.erase( btrit->first );
+	for(btrit=ballotsToRemove.begin(); btrit!=ballotsToRemove.end(); ++btrit){
+		ballots.erase(btrit->first);
 	}
 	
 }
@@ -7109,45 +6067,32 @@ void eliminateCandidate( string removeid, bool isLastCandidate ){
 
 
 void printBallots(){
+
 	printf("Current Ballot State\n");
-	int cutOff = 0;
-	for( ballotit = ballots.begin();
-		ballotit != ballots.end();
-		++ballotit)
-	{
+	int cutOff=0;
+	for(ballotit=ballots.begin(); ballotit!=ballots.end(); ++ballotit){
 		//if(cutOff<10){
-			printf("Voter: %s Balance: %llu Weight: %f Total: %f\n",
-				ballotit->first.c_str(),
-				ballotBalances[ ballotit->first ] / COIN,
-				ballotWeights[ ballotit->first ],
-				( ballotBalances[ ballotit->first ] / COIN ) * ballotWeights[ ballotit->first ] 
-				);
-			int cutOff2 = 0;
+			printf("Voter: %s Balance: %llu Weight: %f Total: %f\n",ballotit->first.c_str(),ballotBalances[ballotit->first]/COIN,ballotWeights[ballotit->first],(ballotBalances[ballotit->first]/COIN)*ballotWeights[ballotit->first]);
+			int cutOff2=0;
 			//if(cutOff2<5){
-				for( svpit2 = ballotit->second.begin();
-					svpit2 != ballotit->second.end();
-					++svpit2)
-				{
-					printf( "Preference: (%d) %llu %s \n",
-						cutOff2,
-						svpit2->first,
-						svpit2->second.c_str()
-						);
+				for(svpit2=ballotit->second.begin();svpit2!=ballotit->second.end();++svpit2){
+					printf("Preference: (%d) %llu %s \n",cutOff2, svpit2->first,svpit2->second.c_str());
 				}
-			/*}*/
+			//}
 			cutOff2++;
-		/*}*/
+		//}
 		cutOff++;
 	}
+	
+	
 }
 
 
-bool startsWith( const char *str, const char *pre )
+bool startsWith(const char *str, const char *pre)
 {
-    size_t lenpre = strlen( pre ),
-           lenstr = strlen( str );
-		   
-    return lenstr < lenpre ? false : strncmp( pre, str, lenpre ) == 0;
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
 
 
@@ -7155,28 +6100,28 @@ bool startsWith( const char *str, const char *pre )
 int64 estimateMMCperUSD(){
 
     //Note - this would be more accurate if it included actual transaction fees in the block reward too - for later.
-    int bv = GetBlockValue( nBestHeight, 0 ) / COIN;
+    int bv=GetBlockValue(nBestHeight,0)/COIN;
 
     //Get diff
-    int nShift = ( pindexBest->nBits >> 24 ) & 0xff;
+    int nShift = (pindexBest->nBits >> 24) & 0xff;
 
     double dDiff =
-        (double)0x0000ffff / (double)( pindexBest->nBits & 0x00ffffff );
+        (double)0x0000ffff / (double)(pindexBest->nBits & 0x00ffffff);
 
-    while ( nShift < 29 )
+    while (nShift < 29)
     {
         dDiff *= 256.0;
         nShift++;
     }
-    while ( nShift > 29 )
+    while (nShift > 29)
     {
         dDiff /= 256.0;
         nShift--;
     }
-	//NOTE: PLEASE FIX FEES. (Possibly decrease it to less than the current block reward?)
-    //printf("best height:%d current diff:%f current value:%llu", nBestHeight, dDiff,bv);
-    double estPrice = dDiff * 745454 / bv;
-    return ( 1 / estPrice ) * COIN;
-}
 
+
+    //printf("best height:%d current diff:%f current value:%llu", nBestHeight, dDiff,bv);
+    double estPrice = dDiff*745454/bv;
+    return (1/estPrice)*COIN;
+}
 
