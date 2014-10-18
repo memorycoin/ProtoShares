@@ -358,7 +358,9 @@ bool CAddrMan::Add_(const CAddress &addr, const CNetAddr& source, int64 nTimePen
     } else {
         pinfo = Create(addr, source, &nId);
         pinfo->nTime = max((int64)0, (int64)pinfo->nTime - nTimePenalty);
-//        printf("Added %s [nTime=%fhr]\n", pinfo->ToString().c_str(), (GetAdjustedTime() - pinfo->nTime) / 3600.0);
+		//DEBUG INFO
+        //printf("Added %s [nTime=%fhr]\n", pinfo->ToString().c_str(), (GetAdjustedTime() - pinfo->nTime) / 3600.0);
+		
         nNew++;
         fNew = true;
     }
