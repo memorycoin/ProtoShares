@@ -1014,7 +1014,7 @@ void openWebsite(string url){
 }
 
 void BitcoinGUI::currentVotes(){
-	openWebsite("http://mmcvotes.com/address/"+getDefaultWalletAddress());
+	openWebsite("http://mmc-votes.com/address/"+getDefaultWalletAddress());
 }
 
 void BitcoinGUI::howToVote(){
@@ -1026,7 +1026,7 @@ void BitcoinGUI::currentCandidates(){
 }
 
 void BitcoinGUI::currentResults(){
-	openWebsite("http://mmcvotes.com/");
+	openWebsite("http://mmc-votes.com/");
 }
 
 void BitcoinGUI::balanceMMC(){
