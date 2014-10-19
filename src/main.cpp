@@ -1907,7 +1907,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     assert( pindexLast );
 	if ( pindexLast->nHeight < 607 ){
 		return OldGetNextWorkRequired( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1)){
+	} else if ( pindexLast->nHeight < V3FORKHEIGHT ){
 	//TODO: TESTNET
 	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
