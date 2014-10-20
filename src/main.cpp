@@ -59,7 +59,7 @@ static int64 nV2grantrateTbl[44];
 static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
-static const int V3FORKHEIGHT = 73920;
+static const int V3FORKHEIGHT = 75600;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
@@ -1545,7 +1545,7 @@ int64 static GetBlockSubsidy(int nHeight){
 			return (int64) nV2rateTbl[ (int)( floor( nHeight / 1680 ) ) ];
 		}else if( nHeight < 84000 ){
 			//SECTION: v3 Parameters
-			// Blocks 73920-84839 (8 weeks)
+			// Blocks 75600-84839 (7 weeks)
 			if( nHeight == 83999) {
 				//NOTE: This block will get us  to 10 million.
 				return (int64) nForkrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 ) ) ] + (int64) 7411;	
