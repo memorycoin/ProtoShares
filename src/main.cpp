@@ -59,7 +59,7 @@ static int64 nV2grantrateTbl[44];
 static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
-static const int V3FORKHEIGHT = 75600;
+static const int V3FORKHEIGHT = 99999;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
