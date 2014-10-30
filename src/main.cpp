@@ -53,8 +53,8 @@ static int64 nMaxMoneyTbl[52];
 static int64 nForkrateTbl[10];
 static int64 nForkGrantrateTbl[10];
 
-static int64 nV2rateTbl[44];
-static int64 nV2grantrateTbl[44];
+static int64 nV2rateTbl[50];
+static int64 nV2grantrateTbl[50];
 
 static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
@@ -1206,7 +1206,7 @@ void PopulateRateTables(){
 		nV2grantrateTbl[0] = (int64) 5600000000;
 		
 		for (int i = 1;
-			i != 44;
+			i != 51;
 			i++)
 		{	
 			nV2rateTbl[ (int64)i ] = (int64) ( ( nV2rateTbl[ i - 1 ] * 19 ) / 20 );
