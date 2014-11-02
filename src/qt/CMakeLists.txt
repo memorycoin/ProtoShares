@@ -17,7 +17,7 @@ set(GUI_SOURCES
 	signverifymessagedialog.cpp
 	aboutdialog.cpp
 	editaddressdialog.cpp
-	bmemorycoinaddressvalidator.cpp
+	memorycoinaddressvalidator.cpp
 	clientmodel.cpp
 	guiutil.cpp
 	transactionrecord.cpp
@@ -65,7 +65,7 @@ add_subdirectory(locale)
 # This is a bit annoying but at least it allows out-of-source 
 # building.  We copy the qrc and resource files to the build 
 # directory to allow rcc to get the relative paths correct.
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/memorycoincoin.qrc DESTINATION
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/memorycoin.qrc DESTINATION
 	  ${CMAKE_CURRENT_BINARY_DIR})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/res DESTINATION
