@@ -1916,11 +1916,18 @@ void StartNode(boost::thread_group& threadGroup)
         printf("DNS seeding disabled\n");
     }else{
         //NOTE: Prioritize non-standard ports here for churns -- our port 1968 nodes are running on p2pools.
-        threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeedNonDefault));
+		
+        //NOTE: Will be pushed in new client
+		//threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeedNonDefault));
+		
 		threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeed));
+		
 		// SECTION: ADD STANDARD NODES
 		//
-		threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addstdnodes", &ThreadConnectStandardNodeConnections));
+		
+		//NOTE: Will be pushed in new client
+		//threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addstdnodes", &ThreadConnectStandardNodeConnections));
+		
 	}
 
 #ifdef USE_UPNP
