@@ -53,23 +53,14 @@ static int64 nMaxMoneyTbl[52];
 static int64 nForkrate;
 static int64 nForkGrantrate;
 
-<<<<<<< HEAD
 static int64 nV2rateTbl[45];
 static int64 nV2grantrateTbl[45];
-=======
-static int64 nV2rateTbl[50];
-static int64 nV2grantrateTbl[50];
->>>>>>> origin/psforkinit
 
 static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
-<<<<<<< HEAD
 static const int V3FORKHEIGHT = 77280;
 static const int YEARHEIGHT = 84840;
-=======
-static const int V3FORKHEIGHT = 99999;
->>>>>>> origin/psforkinit
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
@@ -1222,11 +1213,7 @@ void PopulateRateTables(){
 		nV2grantrateTbl[0] = (int64) 5600000000;
 		
 		for (int i = 1;
-<<<<<<< HEAD
 			i != 45;
-=======
-			i != 51;
->>>>>>> origin/psforkinit
 			i++)
 		{	
 			nV2rateTbl[ (int64)i ] = (int64) ( ( nV2rateTbl[ i - 1 ] * 19 ) / 20 );
@@ -1523,13 +1510,8 @@ int64 static GetBlockSubsidy(int nHeight){
 			return (int64) nV2rateTbl[ (int)( floor( nHeight / 1680 ) ) ];
 		}else if( nHeight < YEARHEIGHT ){
 			//SECTION: v3 Parameters
-<<<<<<< HEAD
 			// Blocks 75600-84419 (8 weeks)
 			if( nHeight == YEARHEIGHT - 1) {
-=======
-			// Blocks 75600-84839 (7 weeks)
-			if( nHeight == 83999) {
->>>>>>> origin/psforkinit
 				//NOTE: This block will get us  to 10 million.
 				return (int64) nForkrate + (int64) 3124;	
 			}
@@ -1894,11 +1876,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	
 	if ( pindexLast->nHeight < 607 ){
 		return OldGetNextWorkRequired( pindexLast, pblock );
-<<<<<<< HEAD
 	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
-=======
-	} else if ( pindexLast->nHeight < V3FORKHEIGHT ){
->>>>>>> origin/psforkinit
 	//TODO: TESTNET
 	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
