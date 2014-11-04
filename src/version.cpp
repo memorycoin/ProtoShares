@@ -37,7 +37,7 @@ const std::string CLIENT_NAME("Memorycoin");
 #define GIT_ARCHIVE 1
 #ifdef GIT_ARCHIVE
 #    define GIT_COMMIT_ID "v30000"
-#    define GIT_COMMIT_DATE "October 7th, 2014 5:00PM"
+#    define GIT_COMMIT_DATE "November 4th, 2014 5:00PM"
 #endif
 
 #define BUILD_DESC_FROM_COMMIT(maj,min,rev,build,commit) \

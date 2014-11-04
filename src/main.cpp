@@ -50,16 +50,17 @@ static int64 nInflationRateTblFix[51];
 
 static int64 nMaxMoneyTbl[52];
 
-static int64 nForkrateTbl[10];
-static int64 nForkGrantrateTbl[10];
+static int64 nForkrate;
+static int64 nForkGrantrate;
 
-static int64 nV2rateTbl[44];
-static int64 nV2grantrateTbl[44];
+static int64 nV2rateTbl[45];
+static int64 nV2grantrateTbl[45];
 
 static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
-static const int V3FORKHEIGHT = 73920;
+static const int V3FORKHEIGHT = 77280;
+static const int YEARHEIGHT = 84840;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
@@ -987,15 +988,19 @@ int CMerkleTx::GetDepthInMainChain(CBlockIndex* &pindexRet) const
 
 int CMerkleTx::GetDepthInMainChainEx(CBlockIndex* &pindexRet, int* heightOut) const
 {
-    if (hashBlock == 0 || nIndex == -1)
+    if (hashBlock == 0 || nIndex == -1){
         return 0;
+	}
 
     // Find the block it claims to be in
     map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
-    if (mi == mapBlockIndex.end())
+    
+	if (mi == mapBlockIndex.end())
         return 0;
-    CBlockIndex* pindex = (*mi).second;
-    if (!pindex || !pindex->IsInMainChain())
+    
+	CBlockIndex* pindex = (*mi).second;
+    
+	if (!pindex || !pindex->IsInMainChain())
         return 0;
 
     // Make sure the merkle branch connects to this block
@@ -1006,6 +1011,8 @@ int CMerkleTx::GetDepthInMainChainEx(CBlockIndex* &pindexRet, int* heightOut) co
 		}
         fMerkleVerified = true;
     }
+	
+	pindexRet = pindex;
 
 	*heightOut = pindexRet->nHeight;
 
@@ -1021,16 +1028,16 @@ int CMerkleTx::GetBlocksToMaturity() const
         return 0;
 	}
 
-	int height = 0;
+	int height = pindexBest->nHeight;
 	int depthInMainChain = GetDepthInMainChainEx(&height);
 	
 	//NOTE: pindexBest is current height
 	//NOTE: *heightOut is height of block containing this tx.
-	//NOTE: Coins from V3FORKHEIGHT mature at the same rate. The next block will provide coins that mature at the new rate.
-	if (height > V3FORKHEIGHT){
-		return max(0, (COINBASE_MATURITY) - depthInMainChain);
+	//NOTE: Coins from V3FORKHEIGHT mature at the same rate. The next block AFTER the hard fork will provide coins that mature at the new rate.
+	if (height < V3FORKHEIGHT){
+		return max(0, COINBASE_MATURITY - depthInMainChain );
 	} else {
-		return max(0, (COINBASE_MATURITY_V3) - depthInMainChain);
+		return max(0, COINBASE_MATURITY_V3 - depthInMainChain );
 	}
 
 }
@@ -1197,16 +1204,16 @@ void PopulateRateTables(){
 	}
 	//SECTION: v2 Supply Table Population
 	//
-	//NOTE: There are 44 total weeks of 'faulty' v2 MMC Supply.
-	if (nV2rateTbl[43] != (int64) 3085127078 
+	//NOTE: There are 45 total weeks of 'faulty' v2 MMC Supply.
+	if (nV2rateTbl[44] != (int64) 2784327187 
 		||
-		nV2grantrateTbl[43] != (int64) 617025415 )
+		nV2grantrateTbl[44] != (int64) 586174144 )
 	{
 		nV2rateTbl[0] = (int64) 28000000000;
 		nV2grantrateTbl[0] = (int64) 5600000000;
 		
 		for (int i = 1;
-			i != 44;
+			i != 45;
 			i++)
 		{	
 			nV2rateTbl[ (int64)i ] = (int64) ( ( nV2rateTbl[ i - 1 ] * 19 ) / 20 );
@@ -1220,77 +1227,35 @@ void PopulateRateTables(){
 //printf("V2 Tables done.\n V3 Tables...\n");		
 	//SECTION: V3 Supply Table Population
 	//
-	//NOTE: Clustered these values for the remaining EIGHT weeks of the mining schedule.
-	//NOTE: [0] is the reference from V2rateTbl;
+	//NOTE: Clustered these values for the remaining 5 weeks of the mining schedule.
 	
 
 	//NOTE: These have been unlooped...
-	if ( nForkrateTbl[7] != (int64) 3366643138 
+	if ( nForkrate != (int64) 3941396608 
 		||
-		nForkGrantrateTbl[7] != (int64) 2019985882 )
+		nForkGrantrate != (int64) 2515785069 )
 	{
-		//40.11760107
-		nForkrateTbl[0] = (int64) 4011760107;
-		
-		//39.12533928
-		nForkrateTbl[1] = (int64) 3912533928;
-		
-		//38.15761992
-		nForkrateTbl[2] = (int64) 3815761992;
-		
-		//37.21383597
-		nForkrateTbl[3] = (int64) 3721383597;
-		
-		//36.29339541
-		nForkrateTbl[4] = (int64) 3629339541;
-		
-		//35.39572086
-		nForkrateTbl[5] = (int64) 3539572086;
-		
-		//34.52024924
-		nForkrateTbl[6] = (int64) 3452024924;
-		
-		//33.66643138
-		nForkrateTbl[7] = (int64) 3366643138;
+		//39.41396608
+		nForkrate = (int64) 3941396608;
 		
 		//SECTION - Fork Grant Rates
 		//
 		//These are paid out only three times a day. Or 21 times a week.
 		
-		//26.7450673
-		nForkGrantrateTbl[0] = (int64) 2407056064;
-		
-		//26.0835595
-		nForkGrantrateTbl[1] = (int64) 2347520356;
-		
-		//25.4384132
-		nForkGrantrateTbl[2] = (int64) 2289457195;
-		
-		//24.8092239
-		nForkGrantrateTbl[3] = (int64) 2232830158;
-		
-		//24.1955969
-		nForkGrantrateTbl[4] = (int64) 2177603724;
-		
-		//23.5971472
-		nForkGrantrateTbl[5] = (int64) 2123743251;
-		
-		//23.0134994
-		nForkGrantrateTbl[6] = (int64) 2071214954;
-		
-		//22.4442875
-		nForkGrantrateTbl[7] = (int64) 2019985882;
+		//25.15785069
+		nForkGrantrate = (int64) 2515785069;
+	
 	}
 	/*	
-	for (int i=0;i!=10;i++){
+	for (int i=0;i!=6;i++){
 		//NOTE: DEBUG INFORMATION
 		printf("===  WEEK v3:  %d ===\n",i);
-		printf("Total Mined coins added this week: %llu\n",(nForkrateTbl[i]*1260) );
-		printf("Total Grant Coins added this week: %llu\n", (nForkGrantrateTbl[i]*21));
-		printf("Total Supply added this week: %llu\n", ((nForkrateTbl[i]*1260)+(nForkGrantrateTbl[i]*21)));
+		printf("Total Mined coins added this week: %llu\n",(nForkrate*1260) );
+		printf("Total Grant Coins added this week: %llu\n", (nForkGrantrate*21));
+		printf("Total Supply added this week: %llu\n", ((nForkrate*1260)+(nForkGrantrate*21)));
 		printf("======\n");
-		printf("nForkrateTbl %d: %llu\n",i, nForkrateTbl[i]);
-		printf("nForkGrantrateTbl %d: %llu\n",i, nForkGrantrateTbl[i]);
+		printf("nForkrate %d: %llu\n",i, nForkrate);
+		printf("nForkGrantrate %d: %llu\n",i, nForkGrantrate);
 		printf("========================\n",i);
 	}
 	*/
@@ -1303,59 +1268,59 @@ void PopulateRateTables(){
 		|| 
 		( nInflationRateTblFix[50] != (int64) nInflationRateTbl[50] + (int64) 28422 ))
 	{
-		nInflationRateTbl[0]   = (int64) 286935286;//2.86935286
-		nInflationRateTbl[1]   = (int64) 292673992;//2.92673992
-		nInflationRateTbl[2]   = (int64) 298527472;//2.98527472
-		nInflationRateTbl[3]   = (int64) 304498021;//3.04498021;
-		nInflationRateTbl[4]   = (int64) 310587982;//3.10587982;
-		nInflationRateTbl[5]   = (int64) 316799742;//3.16799742;
-		nInflationRateTbl[6]   = (int64) 323135736;//3.23135736;
-		nInflationRateTbl[7]   = (int64) 329598451;//3.29598451;
-		nInflationRateTbl[8]   = (int64) 336190420;//3.36190420;
-		nInflationRateTbl[9]   = (int64) 342914229;//3.42914229;
-		nInflationRateTbl[10] = (int64) 349772513;//3.49772513;
-		nInflationRateTbl[11] = (int64) 356767963;//3.56767963;
-		nInflationRateTbl[12] = (int64) 363903323;//3.63903323;
-		nInflationRateTbl[13] = (int64) 371181389;//3.71181389;
-		nInflationRateTbl[14] = (int64) 378605017;//3.78605017;
-		nInflationRateTbl[15] = (int64) 386177117;//3.86177117;
-		nInflationRateTbl[16] = (int64) 393900660;//3.93900660;
-		nInflationRateTbl[17] = (int64) 401778673;//4.01778673;
-		nInflationRateTbl[18] = (int64) 409814246;//4.09814246;
-		nInflationRateTbl[19] = (int64) 418010531;//4.18010531;
-		nInflationRateTbl[20] = (int64) 426370742;//4.26370742;
-		nInflationRateTbl[21] = (int64) 434898157;//4.34898157;
-		nInflationRateTbl[22] = (int64) 443596120;//4.43596120;
-		nInflationRateTbl[23] = (int64) 452468042;//4.52468042;
-		nInflationRateTbl[24] = (int64) 461517403;//4.61517403;
-		nInflationRateTbl[25] = (int64) 470747751;//4.70747751;
-		nInflationRateTbl[26] = (int64) 480162706;//4.80162706;
-		nInflationRateTbl[27] = (int64) 489765960;//4.89765960;
-		nInflationRateTbl[28] = (int64) 499561280;//4.99561280;
-		nInflationRateTbl[29] = (int64) 509552505;//5.09552505;
-		nInflationRateTbl[30] = (int64) 519743555;//5.19743555;
-		nInflationRateTbl[31] = (int64) 530138426;//5.30138426;
-		nInflationRateTbl[32] = (int64) 540741195;//5.40741195;
-		nInflationRateTbl[33] = (int64) 551556019;//5.51556019;
-		nInflationRateTbl[34] = (int64) 562587139;//5.62587139;
-		nInflationRateTbl[35] = (int64) 573838882;//5.73838882;
-		nInflationRateTbl[36] = (int64) 585315660;//5.85315660;
-		nInflationRateTbl[37] = (int64) 597021973;//5.97021973;
-		nInflationRateTbl[38] = (int64) 608962412;//6.08962412;
-		nInflationRateTbl[39] = (int64) 621141661;//6.21141661;
-		nInflationRateTbl[40] = (int64) 633564494;//6.33564494;
-		nInflationRateTbl[41] = (int64) 646235784;//6.46235784;
-		nInflationRateTbl[42] = (int64) 659160500;//6.59160500;
-		nInflationRateTbl[43] = (int64) 672343710;//6.72343710;
-		nInflationRateTbl[44] = (int64) 685790584;//6.85790584;
-		nInflationRateTbl[45] = (int64) 699506395;//6.99506395;
-		nInflationRateTbl[46] = (int64) 713496523;//7.13496523;
-		nInflationRateTbl[47] = (int64) 727766454;//7.27766454;
-		nInflationRateTbl[48] = (int64) 742321783;//7.42321783;
-		nInflationRateTbl[49] = (int64) 757168219;//7.57168219;
-		nInflationRateTbl[50] = (int64) 772311583;//7.72311583;
-		//Grant Values v3
-		//Paid out every 60 blocks or 8 hours.
+		nInflationRateTbl[0]   = (int64) 286935286; // YEAR 1 - 2.86935286 MMC
+		nInflationRateTbl[1]   = (int64) 292673992; // YEAR 2 - 2.92673992 MMC
+		nInflationRateTbl[2]   = (int64) 298527472; //2.98527472
+		nInflationRateTbl[3]   = (int64) 304498021; //3.04498021;
+		nInflationRateTbl[4]   = (int64) 310587982; //3.10587982;
+		nInflationRateTbl[5]   = (int64) 316799742; //3.16799742;
+		nInflationRateTbl[6]   = (int64) 323135736; //3.23135736;
+		nInflationRateTbl[7]   = (int64) 329598451; //3.29598451;
+		nInflationRateTbl[8]   = (int64) 336190420; //3.36190420;
+		nInflationRateTbl[9]   = (int64) 342914229; //3.42914229;
+		nInflationRateTbl[10]  = (int64) 349772513; //3.49772513;
+		nInflationRateTbl[11]  = (int64) 356767963; //3.56767963;
+		nInflationRateTbl[12]  = (int64) 363903323; //3.63903323;
+		nInflationRateTbl[13]  = (int64) 371181389; //3.71181389;
+		nInflationRateTbl[14]  = (int64) 378605017; //3.78605017;
+		nInflationRateTbl[15]  = (int64) 386177117; //3.86177117;
+		nInflationRateTbl[16]  = (int64) 393900660; //3.93900660;
+		nInflationRateTbl[17]  = (int64) 401778673; //4.01778673;
+		nInflationRateTbl[18]  = (int64) 409814246; //4.09814246;
+		nInflationRateTbl[19]  = (int64) 418010531; //4.18010531;
+		nInflationRateTbl[20]  = (int64) 426370742; //4.26370742;
+		nInflationRateTbl[21]  = (int64) 434898157; //4.34898157;
+		nInflationRateTbl[22]  = (int64) 443596120; //4.43596120;
+		nInflationRateTbl[23]  = (int64) 452468042; //4.52468042;
+		nInflationRateTbl[24]  = (int64) 461517403; //4.61517403;
+		nInflationRateTbl[25]  = (int64) 470747751; //4.70747751;
+		nInflationRateTbl[26]  = (int64) 480162706; //4.80162706;
+		nInflationRateTbl[27]  = (int64) 489765960; //4.89765960;
+		nInflationRateTbl[28]  = (int64) 499561280; //4.99561280;
+		nInflationRateTbl[29]  = (int64) 509552505; //5.09552505;
+		nInflationRateTbl[30]  = (int64) 519743555; //5.19743555;
+		nInflationRateTbl[31]  = (int64) 530138426; //5.30138426;
+		nInflationRateTbl[32]  = (int64) 540741195; //5.40741195;
+		nInflationRateTbl[33]  = (int64) 551556019; //5.51556019;
+		nInflationRateTbl[34]  = (int64) 562587139; //5.62587139;
+		nInflationRateTbl[35]  = (int64) 573838882; //5.73838882;
+		nInflationRateTbl[36]  = (int64) 585315660; //5.85315660;
+		nInflationRateTbl[37]  = (int64) 597021973; //5.97021973;
+		nInflationRateTbl[38]  = (int64) 608962412; //6.08962412;
+		nInflationRateTbl[39]  = (int64) 621141661; //6.21141661;
+		nInflationRateTbl[40]  = (int64) 633564494; //6.33564494;
+		nInflationRateTbl[41]  = (int64) 646235784; //6.46235784;
+		nInflationRateTbl[42]  = (int64) 659160500; //6.59160500;
+		nInflationRateTbl[43]  = (int64) 672343710; //6.72343710;
+		nInflationRateTbl[44]  = (int64) 685790584; //6.85790584;
+		nInflationRateTbl[45]  = (int64) 699506395; //6.99506395;
+		nInflationRateTbl[46]  = (int64) 713496523; //7.13496523;
+		nInflationRateTbl[47]  = (int64) 727766454; //7.27766454;
+		nInflationRateTbl[48]  = (int64) 742321783; //7.42321783;
+		nInflationRateTbl[49]  = (int64) 757168219; //7.57168219;
+		nInflationRateTbl[50]  = (int64) 772311583; //7.72311583;
+		//Grant Values v 3
+		//Paid out every  60 blocks or 8 hours.
 		nGrantInflationRateTbl[0]  = (int64) 1098901098;//10.98901098;
 		nGrantInflationRateTbl[1]  = (int64) 1120879120;//11.20879120;
 		nGrantInflationRateTbl[2]  = (int64) 1143296703;//11.43296703;
@@ -1408,10 +1373,10 @@ void PopulateRateTables(){
 		nGrantInflationRateTbl[49] = (int64) 2899793179;//28.99793179;
 		nGrantInflationRateTbl[50] = (int64) 2957789042;//29.57789042;
 		
-		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0] + 61565;
-		nInflationRateTblFix[1]  = (int64) nInflationRateTbl[1] + 44159;
-		nInflationRateTblFix[2]  = (int64) nInflationRateTbl[2] + 34559;
-		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3] + 64080;
+		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0] + 61279; // Year 1 - Fix
+		nInflationRateTblFix[1]  = (int64) nInflationRateTbl[1] + 44519; // Year 2 - Fix
+		nInflationRateTblFix[2]  = (int64) nInflationRateTbl[2] + 34559; // Year 3 - Fix
+		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3] + 84080;
 		nInflationRateTblFix[4]  = (int64) nInflationRateTbl[4] + 27360;
 		nInflationRateTblFix[5]  = (int64) nInflationRateTbl[5] + 4320;
 		nInflationRateTblFix[6]  = (int64) nInflationRateTbl[6] + 59444;
@@ -1458,7 +1423,7 @@ void PopulateRateTables(){
 		nInflationRateTblFix[47] = (int64) nInflationRateTbl[47] + 19596;
 		nInflationRateTblFix[48] = (int64) nInflationRateTbl[48] + 25231;
 		nInflationRateTblFix[49] = (int64) nInflationRateTbl[49] + 3459;
-		nInflationRateTblFix[50] = (int64) nInflationRateTbl[50] + 28422;
+		nInflationRateTblFix[50] = (int64) nInflationRateTbl[50] + 28422; // Year 51 - Fix
 	}
 	
 	if (nMaxMoneyTbl[51] != (int64) 2745417896551400){	
@@ -1541,31 +1506,31 @@ int64 static GetBlockSubsidy(int nHeight){
 			return (int64) nInitialBlocksRateTbl[ nHeight ];
 		}else if( nHeight < V3FORKHEIGHT ){
 			//SECTION: OLD v2 Parameters
-			// Blocks 240-73919
+			// Blocks 240-77279
 			return (int64) nV2rateTbl[ (int)( floor( nHeight / 1680 ) ) ];
-		}else if( nHeight < 84000 ){
+		}else if( nHeight < YEARHEIGHT ){
 			//SECTION: v3 Parameters
-			// Blocks 73920-84839 (8 weeks)
-			if( nHeight == 83999) {
+			// Blocks 75600-84419 (8 weeks)
+			if( nHeight == YEARHEIGHT - 1) {
 				//NOTE: This block will get us  to 10 million.
-				return (int64) nForkrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 ) ) ] + (int64) 7411;	
+				return (int64) nForkrate + (int64) 3124;	
 			}
 			
-			return (int64) nForkrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 ) ) ];
+			return (int64) nForkrate;
 			//
 			//NOTE: the code size would increase dramatically vs. years.
 			//NOTE: We are also FLOORING off to the nearest satoshi (8th digit), so the last block of every year will provide the remainder to get to the next year's starting point in supply. Maximum difference of (<0.000655193448) per year when rounding to nearest digit.
 			//NOTE: This is fixed in the birthday block.
-		}else if( nHeight > 83999 ){
+		}else if( nHeight > YEARHEIGHT ){
 			//NOTE: Blocks 83999 - 3425519
 				//NOTE: Subtract a year and work with it. This should eventually be replaced with a faster method. (High degree of mathematics involved.)
 				//NOTE: Check if it is the last block before the start of the next year.
-				if ( ( ( nHeight - 83999 ) % 65520 ) == 0 ){
+				if ( ( ( nHeight - ( YEARHEIGHT - 1 ) ) % 65520 ) == 0 ){
 					//NOTE: This is a last block to fix ANY offset in inflation.
 					//NOTE: It's the last block before the start of the new year.
-					return (int64) nInflationRateTblFix[ (int)( floor( ( nHeight - 83999 ) / 65520 ) ) ];
+					return (int64) nInflationRateTblFix[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ];
 				}
-				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - 83999 ) / 65520 ) ) ];
+				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ];
 		}else{
 			return false;
 		}
@@ -1576,15 +1541,15 @@ int64 static GetBlockValue( int nHeight, int64 nFees ){
 }
 
 void static SetMaxMoney( int64 BlockHeight ){
-	if( BlockHeight < 84000 ){
+	if( BlockHeight < ( YEARHEIGHT - 1 )  ){
 		MAX_MONEY = nMaxMoneyTbl[0];
-	}else if( BlockHeight > 83999 ){
-		MAX_MONEY =  nMaxMoneyTbl[ (int)( 1 + ( floor( ( BlockHeight - 83999 ) / 65520 ) ) ) ];
+	}else if( BlockHeight > ( YEARHEIGHT - 1 )  ){
+		MAX_MONEY =  nMaxMoneyTbl[ (int)( 1 + ( floor( ( BlockHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ) ];
 	}else{
 		MAX_MONEY =  nMaxMoneyTbl[0];
 	}
 	
-	printf("Set Max Money to $llu", MAX_MONEY);
+	printf(" === Memorycoin Client === \nSet Max Money to $llu\n", MAX_MONEY);
 }
 
 int64 static GetGrantValue( int64 nHeight ){
@@ -1593,10 +1558,10 @@ int64 static GetGrantValue( int64 nHeight ){
 			return nInitialBlocksGrantTbl[ (int)( nHeight / 20 ) ];
 		}else if ( nHeight < V3FORKHEIGHT ){
 			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
-		}else if ( nHeight < 84000 ){
-			return nForkGrantrateTbl[ (int)( floor( ( nHeight - V3FORKHEIGHT ) / 1260 )  ) ];
-		}else if ( nHeight > 83999 ){
-			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - 84000 ) / 65520 ) ) ];
+		}else if ( nHeight >= V3FORKHEIGHT ){
+			return nForkGrantrate;
+		}else if ( nHeight > ( YEARHEIGHT - 1 ) ){
+			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT )  ) / 65520 ) ) ];
 		}
 		//NOTE: This should cover until block 3361679.
 	}
@@ -1905,9 +1870,13 @@ unsigned int static OldGetNextWorkRequired(const CBlockIndex* pindexLast, const 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     assert( pindexLast );
+	if ( fTestNet ) {
+		return bnProofOfWorkLimit.GetCompact();
+	}
+	
 	if ( pindexLast->nHeight < 607 ){
 		return OldGetNextWorkRequired( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1)){
+	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
 	//TODO: TESTNET
 	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
@@ -1915,8 +1884,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	}else{
 	// } else { //NOTE: Greater than or Equal to V3ForkHeight
 		//NOTE: TESTNET
-		// return bnProofOfWorkLimit.GetCompact();
-		return TemporalGetNextWorkRequired( pindexLast, pblock );
+		return bnProofOfWorkLimit.GetCompact();
+		//NOTE: Used from Heavycoin Source-code.
+		//return TemporalGetNextWorkRequired( pindexLast, pblock );
 	}
 }
 
@@ -1930,7 +1900,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits)
         return error("CheckProofOfWork() : nBits below minimum work");
 
     // Check proof of work matches claimed amount
-    if (hash > bnTarget.getuint256())
+    if ( (hash > bnTarget.getuint256() ) && !fTestNet )
         return error("CheckProofOfWork() : hash doesn't match nBits");
 
     return true;
@@ -2497,6 +2467,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 
     bool fScriptChecks = pindex->nHeight >= Checkpoints::GetTotalBlocksEstimate();
 
+
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
     // unless those are already completely spent.
     // If such overwrites are allowed, coinbases and transactions depending upon those
@@ -2583,11 +2554,14 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
     if (fBenchmark) {
         printf("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin)\n", (unsigned)vtx.size(), 0.001 * nTime, 0.001 * nTime / vtx.size(), nInputs <= 1 ? 0 : 0.001 * nTime / (nInputs-1));
 	}
+	//FUNCTION - ConnectBlock
 	//SECTION - Memorycoin Grant Block Information
 	//
 	
 	{
+	
 		LOCK( grantdb );
+		
 		int64 grantAward = 0;
 		
 		//SECTION: Memorycoin Grant Awards Info
@@ -2607,14 +2581,17 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 			
 			unsigned int awardFound = 0;
 			
-			//NOTE:Loop through grantaward array and set them again?
-			//NOTE: What?
+			//NOTE:Loop through grantaward array and set them again for more checks...
 			for( gait = grantAwards.begin();
 				gait != grantAwards.end();
 				++gait){
 				grantAward = grantAward + gait->second;
 			}
 			
+			if (grantAward == 0 ){
+				//NOTE: the awards were not found.
+				printf("ERROR! No Awards found.\n");
+			}
 			//NOTE: ...again?
 			for( gait = grantAwards.begin();
 				gait != grantAwards.end();
@@ -2623,29 +2600,46 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 				//NOTE: Check that these addresses certainly received the exact amount at the exact destination.
 				//NOTE: Scan through all the addresses with a TX destination
 				for ( unsigned int j = 0;
-					j <vtx[0].vout.size();
+					j < vtx[0].vout.size();
 					j++)
 				{
 					CTxDestination address;	
 					//NOTE: Find the receiving address.
 					ExtractDestination( vtx[ 0 ].vout[ j ].scriptPubKey, address );
 					//NOTE: Convert address to a string in order to compare it.
-					string receiveAddress = CMemorycoinAddress( address ).ToString().c_str();
+					//string receiveAddress = CMemorycoinAddress( address ).ToString().c_str();
+					
+					string receiveAddressString = CMemorycoinAddress(address).ToString();
+					string receiveAddress = receiveAddressString.c_str();
 					
 					//NOTE: Convert the amount to an int64 value.
 					int64 theAmount = vtx[ 0 ].vout[ j ].nValue;
 					
-					//printf("Compare %llu, %llu\n",theAmount,gait->second);
-					//printf("Compare %s, %s\n",receiveAddress.c_str(),gait->first.c_str());
+					printf("-----\n");
+					printf("Compare received amount: %llu, %llu\n",theAmount,gait->second);
+					if( (int64) theAmount == (int64) gait->second ) {
+						printf("Yes: %llu equals %llu\n",theAmount,gait->second);
+					}
+					
+					printf("Compare receiving address: %s, %s, (%d)\n", receiveAddress.c_str(), gait->first.c_str(), receiveAddressString.compare( (gait->first).c_str() ));
+					
+					if ( receiveAddressString.compare( (gait->first).c_str() ) == 0 ){
+						printf("Yes: %s equals %s\n",receiveAddress.c_str(),gait->first.c_str());
+					}
+					
+					printf("-----\n");
 				
-					if( theAmount == gait->second && receiveAddress == gait->first){
+					if( theAmount == gait->second && receiveAddress == gait->first )
+					{
 						awardFound++;
+						printf("Match! Current Award Size = %d\n",awardFound);
+						
 						break;
 					}
 				}
 			}
 		
-			printf( "Grant award in block %d, %d\n", awardFound, grantAwards.size() );
+			printf( "Grant award in block awardFound = %d, grantAwards.size() = %d\n", awardFound, grantAwards.size() );
 			
 			for( gait = grantAwards.begin();
 				gait != grantAwards.end();
@@ -2658,7 +2652,8 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 			}
 			
 			//NOTE: This is an error in the Grant DB.
-			if ( awardFound != grantAwards.size() ){
+			if ( awardFound != grantAwards.size() )
+			{
 				return state.DoS(100, error("ConnectBlock() : Memorycoin DB Corruption detected. Grant Awards not being paid or paying too much. \n Please restore a previous version of grantdb.dat and/or delete the old grantdb database."));
 			}
 		}
@@ -3221,9 +3216,9 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 	//
 	//NOTE: Reset the Maximum Money for birthday blocks.
 	//
-	if ( nHeight > 83999
+	if ( nHeight > YEARHEIGHT - 1
 		&&
-		(nHeight - 84000) % 65520 == 0 )
+		(nHeight - YEARHEIGHT) % 65520 == 0 )
 	{
 		SetMaxMoney( (int64) nHeight);
 	}
@@ -3356,13 +3351,6 @@ CMerkleBlock::CMerkleBlock(const CBlock& block, CBloomFilter& filter)
 
     txn = CPartialMerkleTree(vHashes, vMatch);
 }
-
-
-
-
-
-
-
 
 uint256 CPartialMerkleTree::CalcHash(int height, unsigned int pos, const std::vector<uint256> &vTxid) {
     if (height == 0) {
@@ -5212,24 +5200,27 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 	}
     
     {
-		LOCK( grantdb );
+	LOCK( grantdb );
 		//For grant award block, add grants to coinbase
 		//NOTE: We're creating the next block (powerful pools)
-		if( isGrantAwardBlock( pindexBest->nHeight + 1 ) ){
+		printf("Entering grant Award\n");
+	if( isGrantAwardBlock( pindexBest->nHeight + 1 ) )
+		{
 			if( !getGrantAwards( pindexBest->nHeight + 1 ) ){
 				throw std::runtime_error( "ConnectBlock() : Connect Block grant awards error.\n" );
 			}
-			
-			//printf(" === Memorycoin Client ===\n === Retrieved Grant Rewards, Add to Block %d === \n", pindexBest->nHeight+1);
+				
+			printf(" === Memorycoin Client ===\n === Retrieved Grant Rewards, Add to Block %d === \n", pindexBest->nHeight+1);
 			txNew.vout.resize( 1 + grantAwards.size() );
 
 			int i = 0;
-			
+					
 			for( gait = grantAwards.begin();
 				gait != grantAwards.end();
 				++gait)
 			{
-				//printf(" === Grant %llu MMC to %s === \n",gait->second,gait->first.c_str());
+				printf(" === Grant %llu MMC to %s === \n",gait->second,gait->first.c_str());
+				
 				CMemorycoinAddress address( gait->first );
 				txNew.vout[ i + 1 ].scriptPubKey.SetDestination( address.Get() );
 				txNew.vout[ i + 1 ].nValue = gait->second;
@@ -5238,7 +5229,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 		}
     }
     //NOTE: Debug Information
-	//printf("After grant ...\n");
+	printf("=== After grants rewarded... === \n");
 	
     CPubKey pubkey;
     
@@ -6074,24 +6065,25 @@ bool isGrantAwardBlock(int64 nHeight){
 	//NOTE: CALLED EVERY BLOCK. (Minimize computations here.)
 	//printf("isGrantAwardBlock");
 	//NOTE: The v3 fork block index must also grant to candidates.
-	if ( (nHeight != 0) 
+	
+	if ( nHeight != 0 
 	&& 
-		( (nHeight < V3FORKHEIGHT || nHeight == V3FORKHEIGHT )
+		( (nHeight <= V3FORKHEIGHT
+		&& 
+		nHeight % 20 == 0
 			&& 
-		(nHeight % 20 == 0) 
-			&& 
-		(nHeight != 20) ) 
+		nHeight != 20 )
 	|| 
 		( nHeight > V3FORKHEIGHT
 			&&
-		(nHeight % GRANTBLOCKINTERVALV3 == 0) 
+		nHeight - V3FORKHEIGHT % GRANTBLOCKINTERVALV3 == 0
 			&& 
-		(nHeight != GRANTBLOCKINTERVALV3 ) ) )
+		nHeight != GRANTBLOCKINTERVALV3 ) ) )
 	{
-		//printf("isGrantAwardBlock : True");
+		//printf("isGrantAwardBlock : True (%d)\n", nHeight);
 		return true;
 	}else{
-		//printf("isGrantAwardBlock : False");
+		//printf("isGrantAwardBlock : False (%d)\n", nHeight);
 		return false;
 	}
 }
@@ -6102,7 +6094,7 @@ bool isGrantAwardBlock(int64 nHeight){
 //TODO: This could be compressed and/or encrypted to save space.
 void serializeGrantDB(string filename){
 		//NOTE: Debug Information
-		printf("Serialize Grant Info Database %llu\n",grantDatabaseBlockHeight);
+		printf(" === Memorycoin Client === \nSerialize Grant Info Database: Current Grant Database Block Height: %llu\n",grantDatabaseBlockHeight);
 		
 		//NOTE: Setup the filestream object and open the file.
 		ofstream grantdb;
@@ -6149,7 +6141,7 @@ void serializeGrantDB(string filename){
 				++vpit)
 			{
 				//NOTE: Address voted from: (key)
-                grantdb << vpit->first << "\n";
+                grantdb << (vpit->first) << "\n";
 				
 				//NOTE: How many preferences are located in the array?
                 grantdb << vpit->second.size() << "\n";
@@ -6174,7 +6166,7 @@ void serializeGrantDB(string filename){
 bool deSerializeGrantDB( string filename, int64 maxWanted ){
 	//NOTE: This takes a while to load Grant DB.
 	//TODO: Disable debug information.
-	printf("De-Serialize Grant Info Database\n");
+	printf(" === Memorycoin Client === \nDe-Serialize Grant Info Database\n Max Blocks Wanted: %d\n", maxWanted);
 	
 	std::string line;
 	std::string line2;
@@ -6189,9 +6181,11 @@ bool deSerializeGrantDB( string filename, int64 maxWanted ){
 	//NOTE: Rare error... only happens if client has a corrupt grantDB or does not exist.
 	//NOTE: Cannot open file. Looks like we have to start all over again.
 	if ( !myfile.is_open() ){
-		printf("Could not load Grant Info Database from %s\n",filename.c_str());
+	
+		printf("Could not load Grant Info Database from %s, Max Wanted: %d\n",filename.c_str(), maxWanted);
 		
 		return false;
+	
 	}else if (myfile.is_open()){
 		//NOTE: Retrieve the latest grant database height.
 		//NOTE: Line #1
@@ -6200,7 +6194,7 @@ bool deSerializeGrantDB( string filename, int64 maxWanted ){
 		grantDatabaseBlockHeight = atoi64( line.c_str() );
 		
 		//TODO: Remove debug information.
-		printf("Deserialize Grant Info Database Found Height %llu\n",grantDatabaseBlockHeight);
+		printf("Deserialize Grant Info Database Found.\n Height %llu, Max Wanted %d\n",grantDatabaseBlockHeight, maxWanted);
 		
 		//NOTE: This condition disables the deserialization of the Grant DB.
 		//NOTE: maxWanted is an int64 passed to this function.
@@ -6292,7 +6286,7 @@ bool deSerializeGrantDB( string filename, int64 maxWanted ){
 		
 		//NOTE: This loop checks if the blocks are valid and the next one is available.
 		for( int i = 0;
-			i != grantDatabaseBlockHeight;
+			i < grantDatabaseBlockHeight;
 			i++)
 		{
 			//NOTE: Check if gdBlockPointer is defined and not NULL.
@@ -6313,7 +6307,7 @@ bool deSerializeGrantDB( string filename, int64 maxWanted ){
 bool getGrantAwards(int64 nHeight){
 	//nHeight is the current block height
 	if( !isGrantAwardBlock( nHeight ) ){
-		printf("Error - calling getgrantawards for non grant award block");
+		printf("Error - calling getgrantawards for non grant award block, nHeight requested: %d", nHeight);
 		return false;
 	}else{
 		return ensureGrantDatabaseUptoDate( nHeight );
@@ -6322,7 +6316,7 @@ bool getGrantAwards(int64 nHeight){
 
 bool ensureGrantDatabaseUptoDate(int64 nHeight){
 	//NOTE: This sets up the initial database
-	
+	printf(" === Grant Database Block Height %d === \n", grantDatabaseBlockHeight);
     //This should always be true on startup
     if( grantDatabaseBlockHeight == -1 ){
 			//string newCV="xxx";
@@ -6331,17 +6325,19 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
 		
         //Only count custom vote if re-indexing
 		//NOTE: We will note be using a custom vote prefix any longer.
-		/*
-        if(getGrantDatabaseBlockHeight()==-1 && (GetBoolArg("-reindex"),false)){
+		 /*
+         if(getGrantDatabaseBlockHeight()==-1 && (GetBoolArg("-reindex"),false)){
             newCV=GetArg("-customvoteprefix",newCV);
             printf("customvoteprefix:%s\n",newCV.c_str());
-        }*/
+        } 
+		*/
 		electedOffices[0] = "ceo";
 		electedOffices[1] = "cto";
 		electedOffices[2] = "cno";
 		electedOffices[3] = "cmo";
 		electedOffices[4] = "cso";
 		electedOffices[5] = "cha";
+		electedOffices[6] = "xxx";
 		
 		//electedOffices[6] = newCV;
 		//6th [debug] is not necessary.
@@ -6356,25 +6352,23 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
 	//NOTE: Grants of the new supply will be granted to candidates on the hard-fork block.
 	int64 requiredGrantDatabaseHeight = 0;
 	
-	if( nHeight < V3FORKHEIGHT || nHeight == V3FORKHEIGHT ){
-		requiredGrantDatabaseHeight = (int64) nHeight - 20;
-	}else if( nHeight > V3FORKHEIGHT ) {
- 		requiredGrantDatabaseHeight = (int64) nHeight - GRANTBLOCKINTERVALV3;
+	if( nHeight <= V3FORKHEIGHT ){
+		requiredGrantDatabaseHeight = nHeight - 20;
+	}else if( nHeight >= V3FORKHEIGHT + GRANTBLOCKINTERVALV3 ) {
+ 		requiredGrantDatabaseHeight = nHeight - GRANTBLOCKINTERVALV3;
 	}
 		/* else {
 		//TODO: V3.1 Options
 	}*/
- 	printf("=== Memorycoin Client: Making sure that Grant Database is up to date. ===\n=== Required Height of Database: %lld ===\n",requiredGrantDatabaseHeight);
+ 	printf("=== Memorycoin Client: Making sure that Grant Database is up to date. ===\n=== Required Height of Database: %lld, Height requested from: %d ===\n",requiredGrantDatabaseHeight, nHeight);
     //Maybe we don't have to count votes from the start - let's check if there's a recent vote database stored
     if( grantDatabaseBlockHeight == -1){
-		/*if (nHeight < V3FORKHEIGHT){*/
 			deSerializeGrantDB( ( GetDataDir() / "blocks/grantdb.dat" ).string().c_str(), requiredGrantDatabaseHeight );
-			//printf("deserialized vote database:\n");
-		/*}else if (nHeight > V3FORKHEIGHT - 1){
-			deSerializeGrantDB( ( GetDataDir() / "blocks/grantdbv3.dat" ).string().c_str(), requiredGrantDatabaseHeight );
-		}*/
 	}
  
+ 
+ //NOTE: This has been removed... why?
+ /*
     if( grantDatabaseBlockHeight > requiredGrantDatabaseHeight ){
         printf("Grant database has processed too many blocks. Needs to be rebuilt. %lld", nHeight );
         
@@ -6390,7 +6384,7 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
         grantDatabaseBlockHeight = -1;
 		
 	}
-	
+*/	
     while( grantDatabaseBlockHeight < requiredGrantDatabaseHeight ){
         processNextBlockIntoGrantDatabase();
 	}
@@ -6401,15 +6395,7 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
 
 int getOfficeNumberFromAddress(string grantVoteAddress, int64 nHeight){
 	//printf("getOfficeNumberFromAddress\n");
-	if ( 
-		( /*nHeight < V3FORKHEIGHT 
-			&& */
-		!startsWith( grantVoteAddress.c_str(), "MVTE" ) ) 
-	//NOTE: NOT CHANGING PREFIX.
-	/*|| 
-		( nHeight > ( V3FORKHEIGHT - 1 ) 
-			&& 
-		!startsWith( grantVoteAddress.c_str(), GRANTPREFIXV3.c_str() ) )*/ )
+	if (!startsWith( grantVoteAddress.c_str(), "MVTE" ) )
 	{
 		//printf("getOfficeNumberFromAddress: Fail - 1\n");
 		return -1;
@@ -6423,14 +6409,7 @@ int getOfficeNumberFromAddress(string grantVoteAddress, int64 nHeight){
 	{
 	//printf("substring %s\n",grantVoteAddress.substr(4,3).c_str());
 	//NOTE: Not changing prefix.
-		if ( 
-			( /*nHeight < V3FORKHEIGHT 
-				&&*/
-			grantVoteAddress.substr(4,3) == electedOffices[i] ) 
-		/*|| 
-			(nHeight > (V3FORKHEIGHT-1)
-				&& 
-			grantVoteAddress.substr(3,3) == electedOffices[i] )*/)
+		if ( grantVoteAddress.substr(4,3) == electedOffices[i] )
 		{
 			//printf("getOfficeNumberFromAddress: Pass\n");
 			return i;
@@ -6479,7 +6458,7 @@ void printVotingPrefs(std::string address){
 
 void processNextBlockIntoGrantDatabase(){
 
-	//printf("processNextBlockIntoGrantDatabase %d\n",grantDatabaseBlockHeight+1);
+	printf(" === Memorycoin Client === \n Processing the Next Block into the Grant Database for Block: %d\n",grantDatabaseBlockHeight+1);
 	
 	//NOTE: Process the latest block.
 	CBlock block;
@@ -6502,7 +6481,6 @@ void processNextBlockIntoGrantDatabase(){
 		i++)
 	{
 		std::map<std::string,int64 > votes;
-		
 		std::map<std::string,int64 >::iterator votesit;
 		
 		//Deal with outputs first - increase balances AND note what the votes are
@@ -6512,9 +6490,7 @@ void processNextBlockIntoGrantDatabase(){
 			j++)
 		{
 			CTxDestination address;
-			
 			ExtractDestination( block.vtx[ i ].vout[ j ].scriptPubKey, address );
-			
 			string receiveAddress = CMemorycoinAddress( address ).ToString().c_str();
 			
 			//Grab the amount of coins "Received to this address"
@@ -6527,36 +6503,20 @@ void processNextBlockIntoGrantDatabase(){
 			
 			//Note any voting preferences made in the outputs
 			//NOTE: THIS IS CALLED FOR EVERY TRANSACTION (wow.)
-			//printf("Note any voting preferences made in the outputs\n");
-			/*if(
-				//NOTE: Easiest checks first.
-				//NOTE: Is the amount between 0 and 10 satoshi's ??
-				theAmount < 10 
-			&& 
-				theAmount > 0
-			&& 
-				( gdBlockPointer->nHeight < V3FORKHEIGHT
-				&&
-				startsWith( receiveAddress.c_str(), "MVTE" ) ) 
-			||
-				( gdBlockPointer->nHeight > (V3FORKHEIGHT - 1)
-				&& 
-					startsWith( receiveAddress.c_str(), "MMC" ) ) )
-			{
-				//printf("We found a vote!: Vote found Preference: %llu\n",theAmount);
-				//Voting output - if the same address is voted a number of times in the same transaction, only the last one is counted
-				votes[ receiveAddress ] = theAmount;
-			}	*/
 			
+			//Spammed...
+			//printf("Note any voting preferences made in the outputs\n");
+
 			if(
 				//NOTE: Easiest checks first.
-				//NOTE: Is the amount between 0 and 10 satoshi's ??
+				//NOTE: Is the amount between 1 and 9 satoshi's ??
 				theAmount < 10 
 			&& 
 				theAmount > 0
 			&& 
 				startsWith( receiveAddress.c_str(), "MVTE" ) )
 			{
+				printf(" == Memorycoin Client === \nWe found a vote!\n: Vote found -- Candidate: %s, Preference: %llu\n ======\n",receiveAddress.c_str() , theAmount);
 				votes[ receiveAddress ] = theAmount;
 			}
 		}
@@ -6595,11 +6555,11 @@ void processNextBlockIntoGrantDatabase(){
 					++votesit)
 				{
 					//NOTE: (Why are we still debugging?)
-                    //printf("Vote found: %s, %llu\n",votesit->first.c_str(),votesit->second);
-					string grantVoteAddress = ( votesit->first );
+                    printf(" === Memorycoin Client === \nVote found: %s, %llu\n",votesit->first.c_str(),votesit->second);
+					string grantVoteAddress = ( votesit->first );	 
 					int electedOfficeNumber = getOfficeNumberFromAddress( grantVoteAddress, gdBlockPointer->nHeight );
 					
-					if( electedOfficeNumber != -1 ){
+					if( electedOfficeNumber > -1 ){
 						//NOTE: running the grant database is memory intensive and can cause an issue of taking up too much memory on the node.
 						//TODO: There may be a better way to set this database up.
                         //printf("Vote added: %d %s, %llu\n",electedOfficeNumber,votesit->first.c_str(),votesit->second);
@@ -6615,19 +6575,19 @@ void processNextBlockIntoGrantDatabase(){
 		}
 		
 	}
+	//SECTION: processNextBlockIntoGrantDatabase function
+	//
+	
 	//NOTE: INCREASE THE GRANTDATABASEBLOCK HEIGHT
 	//NOTE: Run after the above loop scans through the size of the block for every transaction.
 	grantDatabaseBlockHeight++;
 	
-	if ( 
-		( gdBlockPointer->nHeight < V3FORKHEIGHT 
-		|| 
-		gdBlockPointer->nHeight == V3FORKHEIGHT ) 
-	&& 
+	printf("Block has been processed. Grant Database Block Height is now updated to Block # %d\n", grantDatabaseBlockHeight);
+	if ( gdBlockPointer->nHeight <= V3FORKHEIGHT 
+		&&
 		isGrantAwardBlock( grantDatabaseBlockHeight + 20 ) ) 
 	{
 		getGrantAwardsFromDatabaseForBlock( grantDatabaseBlockHeight + 20 );
-		serializeGrantDB( (GetDataDir() / "blocks/grantdb.dat" ).string().c_str() );
 		//Save the grant database to disk - these need to be persisted
 		//TODO: This database may pose a security risk in which the grant database can be compromised and changed.
 		//NOTE: There is a better way to store this database and encrypt it...
@@ -6635,10 +6595,15 @@ void processNextBlockIntoGrantDatabase(){
         //check deserialization is working
         //deSerializeGrantDB((GetDataDir() / "blocks/grantdb.dat").string().c_str());
 		//printf("2 current block on:%llu\n",gdBlockPointer->GetBlockHash());	
-	}else if (gdBlockPointer->nHeight > V3FORKHEIGHT ){
+	}else if ( gdBlockPointer->nHeight >= V3FORKHEIGHT + GRANTBLOCKINTERVALV3
+		&& 
+		isGrantAwardBlock( grantDatabaseBlockHeight + GRANTBLOCKINTERVALV3 ) )
+	{
 		getGrantAwardsFromDatabaseForBlock( grantDatabaseBlockHeight + GRANTBLOCKINTERVALV3 );
-		serializeGrantDB( (GetDataDir() / "blocks/grantdb.dat" ).string().c_str() );
 	}
+	
+	//NOTE: This is always serialized or saved at the end.
+	serializeGrantDB( (GetDataDir() / "blocks/grantdb.dat" ).string().c_str() );
 }
 
 
@@ -6721,18 +6686,16 @@ void printBalances( int64 howMany, bool printVoting, bool printWasted ){
 
 bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 	
-    printf( " === Memorycoin Client === \ngetGrantAwardsFromDatabase %llu\n", nHeight );
-	//NOTE: ADD v3 Options here.
+    printf( " === Memorycoin Client === \n getGrantAwardsFromDatabaseForBlock %llu\n", nHeight );
 	if (
-		( 		(nHeight < V3FORKHEIGHT
-				||
-				nHeight == V3FORKHEIGHT )
+		( nHeight <= V3FORKHEIGHT
 			&& 
-		grantDatabaseBlockHeight != nHeight - 20)
-	||
-		( nHeight > V3FORKHEIGHT
+			grantDatabaseBlockHeight != nHeight - 20 )
+		||
+		 ( nHeight > V3FORKHEIGHT + GRANTBLOCKINTERVALV3
 			&&
-		grantDatabaseBlockHeight != nHeight - GRANTBLOCKINTERVALV3) )
+			grantDatabaseBlockHeight != nHeight - GRANTBLOCKINTERVALV3 )
+		)
 	{ 
         printf(" === Memorycoin Client === \ngetGrantAwardsFromDatabase is being called when no awards are due. %llu %llu\n",grantDatabaseBlockHeight,nHeight);
 
@@ -6796,23 +6759,22 @@ bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 				}
 			}
 		}
-    //if(debugVote)printBalances(100,true,false);
-	//TODO: decrease intensity of this function.
-	getWinnersFromBallots( nHeight, i );
+		//if(debugVote)printBalances(100,true,false);
+		//TODO: decrease intensity of this function.
+		getWinnersFromBallots( nHeight, i );
 
-	//At this point, we know the vote winners - now to see if grants are to be awarded
-	//nheight is the current blockheight
+		//At this point, we know the vote winners - now to see if grants are to be awarded
+		//nheight is the current blockheight
 		if( i < numberOfOffices ){
-			for(int i = 0;
-				i<1;
-				i++)
-			{
+			for(int i=0;i<1;i++){
 				grantAwards[ awardWinners[ i ] ] = grantAwards[ awardWinners[ i ] ] + GetGrantValue( nHeight );
+						
 				if( debugVote ){
-					grantAwardsOutput << "Add grant award to Block "<<awardWinners[i].c_str()<<" ("<<GetGrantValue(nHeight)/COIN<<")\n";
+					grantAwardsOutput << "Add grant award to Block "<<awardWinners[0].c_str()<<" ("<<GetGrantValue(nHeight)/COIN<<")\n";
 				}
-			}
+			}		
 		}
+	
 		if( debugVote ){
 			printCandidateSupport();
 		}
@@ -6863,7 +6825,8 @@ void getWinnersFromBallots( int64 nHeight, int officeNumber ){
 		grantAwardsOutput <<"Percentage of total issued coin voting: "<<(totalOfVoterBalances*100)/tally<<" percent\n";
 	}
 	//Calculate Droop Quota
-	int64 droopQuota = ( totalOfVoterBalances / ( 1 + 1 ) ) + 1;
+	int64 droopQuota = (totalOfVoterBalances/2) + 1;
+	//int64 droopQuota = ( totalOfVoterBalances / ( 1 ) ) + 1;
 	if( debugVote ){
 		grantAwardsOutput <<"Droop Quota: "<<droopQuota/COIN<<"\n";
 	}
@@ -7037,24 +7000,12 @@ void electCandidate( string topOfThePoll,
 		svpit2 = ballotit->second.begin();
 		if( svpit2->second == topOfThePoll ){
 			//Record how many votes went towards electing this candidate for each user
-			electedVotes[ ballotit->first ][ 
-				balances[ ballotit->first ] 
-				* 
-					( ballotWeights[ ballotit->first ] 
-					* 
-					( 1 - gregorySurplusTransferValue ) ) 
-				] = svpit2->second;
+			electedVotes[ ballotit->first ][ balances[ ballotit->first ]*( ballotWeights[ ballotit->first ] * ( 1 - gregorySurplusTransferValue ) ) ] = svpit2->second;
 			//Record the support for each candidate elected
-			supportVotes[ topOfThePoll ][ 
-				balances[ ballotit->first ]
-				*
-					( ballotWeights[ ballotit->first ]
-					* 
-					( 1 - gregorySurplusTransferValue ) ) 
-				] = ballotit->first;
+			supportVotes[ topOfThePoll ][ balances[ ballotit->first ] * ( ballotWeights[ ballotit->first ] * ( 1 - gregorySurplusTransferValue ) ) ] = ballotit->first;
 			
 			//This voter had the elected candidate at the top of the ballot. Adjust weight for future preferences.
-			ballotWeights[ ballotit->first ] = ballotWeights[ ballotit->first ] * gregorySurplusTransferValue;
+			ballotWeights[ballotit->first]=ballotWeights[ballotit->first]*gregorySurplusTransferValue;
 		}
 	}
 	
@@ -7089,7 +7040,7 @@ void eliminateCandidate( string removeid, bool isLastCandidate ){
 		}
 		
 		//Make a note of ballot to remove
-		if( ballotit->second.size() ==0 ){
+		if( ballotit->second.size() == 0 ){
 			if( !isLastCandidate ){
 				wastedVotes[ ballotit->first ] = ( ballotBalances[ ballotit->first ] * ballotWeights[ ballotit->first ] );
 			}
@@ -7134,9 +7085,9 @@ void printBallots(){
 						svpit2->second.c_str()
 						);
 				}
-			/*}*/
+			/* }*/
 			cutOff2++;
-		/*}*/
+		/* }*/
 		cutOff++;
 	}
 }

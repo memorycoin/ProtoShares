@@ -1155,11 +1155,16 @@ public:
 
 
     int SetMerkleBranch(const CBlock* pblock=NULL);
+	
     int GetDepthInMainChain(CBlockIndex* &pindexRet) const;
+	
     int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
 	//NOTE: PASS HEIGHT POINTER
+	
     int GetDepthInMainChainEx(CBlockIndex* &pindexRet, int* heightOut) const;
+	
 	int GetDepthInMainChainEx(int* heightOut) const { CBlockIndex *pindexRet; return GetDepthInMainChainEx(pindexRet, heightOut); }
+	
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
     bool AcceptToMemoryPool(bool fCheckInputs=true, bool fLimitFree=true);

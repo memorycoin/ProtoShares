@@ -1918,6 +1918,9 @@ void StartNode(boost::thread_group& threadGroup)
         //NOTE: Prioritize non-standard ports here for churns -- our port 1968 nodes are running on p2pools.
         threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeedNonDefault));
 		threadGroup.create_thread(boost::bind(&TraceThread<boost::function<void()> >, "dnsseed", &ThreadDNSAddressSeed));
+		// SECTION: ADD STANDARD NODES
+		//
+		threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addstdnodes", &ThreadConnectStandardNodeConnections));
 	}
 
 #ifdef USE_UPNP
@@ -1930,10 +1933,6 @@ void StartNode(boost::thread_group& threadGroup)
 
     // Initiate outbound connections from -addnode
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addcon", &ThreadOpenAddedConnections));
-   
-	// SECTION: ADD STANDARD NODES
-	//
-	threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "addstdnodes", &ThreadConnectStandardNodeConnections));
 
     // Initiate outbound connections
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "opencon", &ThreadOpenConnections));
