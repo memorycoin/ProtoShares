@@ -1183,8 +1183,7 @@ void PopulateRateTables(){
 //printf("Populate Rate Table\n");
 //SECTION: Initial Population of Memorycoin Lookup Tables.
 //
-//SECTION: Supply Tables Population.
-//
+////SECTION: Supply Tables Population.
 	//SECTION: Initial Supply Table Population
 	//
 	//NOTE: Each block is different. Adding 240 lines to unroll this loop would be a waste of file space. There is a trade-off!
