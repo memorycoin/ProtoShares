@@ -1883,9 +1883,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	}else{
 	// } else { //NOTE: Greater than or Equal to V3ForkHeight
 		//NOTE: TESTNET
-		return bnProofOfWorkLimit.GetCompact();
+		//return bnProofOfWorkLimit.GetCompact();
 		//NOTE: Used from Heavycoin Source-code.
-		//return TemporalGetNextWorkRequired( pindexLast, pblock );
+		return TemporalGetNextWorkRequired( pindexLast, pblock );
 	}
 }
 
