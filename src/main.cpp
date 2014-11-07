@@ -60,6 +60,7 @@ static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
 static const int V3FORKHEIGHT = 77280;
+static const int V3FORKHEIGHTFIXDIF = 77390;
 static const int YEARHEIGHT = 84840;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
@@ -1520,7 +1521,7 @@ int64 static GetBlockSubsidy(int nHeight){
 			//NOTE: the code size would increase dramatically vs. years.
 			//NOTE: We are also FLOORING off to the nearest satoshi (8th digit), so the last block of every year will provide the remainder to get to the next year's starting point in supply. Maximum difference of (<0.000655193448) per year when rounding to nearest digit.
 			//NOTE: This is fixed in the birthday block.
-		}else if( nHeight > YEARHEIGHT ){
+		}else if( nHeight >= YEARHEIGHT ){
 			//NOTE: Blocks 83999 - 3425519
 				//NOTE: Subtract a year and work with it. This should eventually be replaced with a faster method. (High degree of mathematics involved.)
 				//NOTE: Check if it is the last block before the start of the next year.
@@ -1660,6 +1661,92 @@ BlockCreating = BlockCreating;
         EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
 
         if(PastBlocksMass >= (uint64) 60){
+            if( ( PastRateAdjustmentRatio <= EventHorizonDeviationSlow ) 
+			|| 
+				(PastRateAdjustmentRatio >= EventHorizonDeviationFast) )
+			{
+				assert(BlockReading);
+				
+				break; 
+			}
+        }
+        
+		if( BlockReading->pprev == NULL ){
+			assert(BlockReading);
+			break;
+		}
+        
+		BlockReading = BlockReading->pprev;
+    }
+
+    CBigNum bnNew( PastDifficultyAverage );
+	
+    if( PastRateActualSeconds != 0 && PastRateTargetSeconds != 0 ){
+        bnNew *= PastRateActualSeconds;
+        bnNew /= PastRateTargetSeconds;
+    }
+	
+    if( bnNew > bnProofOfWorkLimit ){
+		bnNew = bnProofOfWorkLimit;
+	}
+
+    /// debug print
+    //printf("Difficulty Retarget - Kimoto Gravity Well\n");
+    //printf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
+    //printf("Before: %08x %s\n", BlockLastSolved->nBits, CBigNum().SetCompact(BlockLastSolved->nBits).getuint256().ToString().c_str());
+    //printf("After: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+	
+    return bnNew.GetCompact();
+}
+
+unsigned int static V3KimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
+    /* current difficulty formula, Anoncoin - kimoto gravity well */
+    const CBlockIndex *BlockLastSolved = pindexLast;
+    const CBlockIndex *BlockReading = pindexLast;
+    const CBlockHeader *BlockCreating = pblock;
+	BlockCreating = BlockCreating;
+    uint64 PastBlocksMass = 0;
+    int64 PastRateActualSeconds = 0;
+    int64 PastRateTargetSeconds = 0;
+    double PastRateAdjustmentRatio = double(1);
+    CBigNum PastDifficultyAverage;
+    CBigNum PastDifficultyAveragePrev;
+    double EventHorizonDeviation;
+    double EventHorizonDeviationFast;
+    double EventHorizonDeviationSlow;
+
+    if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < (uint64) 45) { return bnProofOfWorkLimit.GetCompact(); }
+	int64 LatestBlockTime = BlockLastSolved->GetBlockTime();
+    for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
+        if ((uint64) 180 > 0 && i >  (uint64) 180) { break; }
+        PastBlocksMass++;
+
+        if (i == 1) { PastDifficultyAverage.SetCompact(BlockReading->nBits); }
+        else { PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev; }
+        PastDifficultyAveragePrev = PastDifficultyAverage;
+
+        if(LatestBlockTime < BlockReading->GetBlockTime()) {
+			if(BlockReading->nHeight > 35720)
+				LatestBlockTime = BlockReading->GetBlockTime();
+		}
+		PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
+        PastRateTargetSeconds = (uint64) 480 * PastBlocksMass;
+        PastRateAdjustmentRatio = double(1);
+        
+		//KGW Fix Applied
+		if( PastRateActualSeconds < 0 ){
+			PastRateActualSeconds = 0; 
+		}
+		
+        if( PastRateActualSeconds != 0 && PastRateTargetSeconds != 0 ){
+			PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
+        }
+		
+        EventHorizonDeviation = 1 + ( 0.7084 * pow( (double( PastBlocksMass ) / double( 144 ) ), -1.228 ) );
+        EventHorizonDeviationFast = EventHorizonDeviation;
+        EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
+
+        if(PastBlocksMass >= (uint64) 45){
             if( ( PastRateAdjustmentRatio <= EventHorizonDeviationSlow ) 
 			|| 
 				(PastRateAdjustmentRatio >= EventHorizonDeviationFast) )
@@ -1880,12 +1967,14 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
 		return KimotoGravityWell( pindexLast, pblock );
-	}else{
+	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) && pindexLast->nHeight < V3FORKHEIGHTFIXDIF  ){
 	// } else { //NOTE: Greater than or Equal to V3ForkHeight
 		//NOTE: TESTNET
 		//return bnProofOfWorkLimit.GetCompact();
 		//NOTE: Used from Heavycoin Source-code.
 		return TemporalGetNextWorkRequired( pindexLast, pblock );
+	} else {
+		return V3KimotoGravityWell( pindexLast, pblock );
 	}
 }
 
