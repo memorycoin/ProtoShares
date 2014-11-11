@@ -1184,7 +1184,8 @@ void PopulateRateTables(){
 //printf("Populate Rate Table\n");
 //SECTION: Initial Population of Memorycoin Lookup Tables.
 //
-////SECTION: Supply Tables Population.
+//
+//SECTION: Supply Tables Population.
 	//SECTION: Initial Supply Table Population
 	//
 	//NOTE: Each block is different. Adding 240 lines to unroll this loop would be a waste of file space. There is a trade-off!
@@ -1962,12 +1963,12 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	
 	if ( pindexLast->nHeight < 607 ){
 		return OldGetNextWorkRequired( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
+	} else if ( pindexLast->nHeight < V3FORKHEIGHT ){
 	//TODO: TESTNET
-	// pindexLast->nHeight <= 73000){
+	// pindexLast->nHeight <= ){
 		//NOTE: Old Memorycoin V2 KGW Algo
 		return KimotoGravityWell( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) && pindexLast->nHeight < V3FORKHEIGHTFIXDIF  ){
+	} else if ( pindexLast->nHeight > (V3FORKHEIGHT-1) && pindexLast->nHeight < V3FORKHEIGHTFIXDIF  ){
 	// } else { //NOTE: Greater than or Equal to V3ForkHeight
 		//NOTE: TESTNET
 		//return bnProofOfWorkLimit.GetCompact();
