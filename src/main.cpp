@@ -1965,12 +1965,12 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	
 	if ( pindexLast->nHeight < 607 ){
 		return OldGetNextWorkRequired( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < V3FORKHEIGHT ){
+	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
 	//TODO: TESTNET
-	// pindexLast->nHeight <= ){
+	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
 		return KimotoGravityWell( pindexLast, pblock );
-	} else if ( pindexLast->nHeight > (V3FORKHEIGHT-1) && pindexLast->nHeight < V3FORKHEIGHTFIXDIF  ){
+	} else if ( pindexLast->nHeight >= V3FORKHEIGHT && pindexLast->nHeight < V3FORKHEIGHTFIXDIF  ){
 	// } else { //NOTE: Greater than or Equal to V3ForkHeight
 		//NOTE: TESTNET
 		//return bnProofOfWorkLimit.GetCompact();
