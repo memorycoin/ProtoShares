@@ -61,6 +61,7 @@ static int64 nInitialBlocksGrantTbl[12];
 
 static const int V3FORKHEIGHT = 77280;
 static const int V3FORKHEIGHTFIXDIF = 77390;
+static const int V3FORKGRANTFIX = 79020;
 static const int YEARHEIGHT = 84840;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
@@ -1228,10 +1229,7 @@ void PopulateRateTables(){
 //printf("V2 Tables done.\n V3 Tables...\n");		
 	//SECTION: V3 Supply Table Population
 	//
-	//NOTE: Clustered these values for the remaining 5 weeks of the mining schedule.
-	
-
-	//NOTE: These have been unlooped...
+	//NOTE: Clustered these values for the remaining weeks of the mining schedule.
 	if ( nForkrate != (int64) 3941396608 
 		||
 		nForkGrantrate != (int64) 2515785069 )
@@ -1559,6 +1557,10 @@ int64 static GetGrantValue( int64 nHeight ){
 			return nInitialBlocksGrantTbl[ (int)( nHeight / 20 ) ];
 		}else if ( nHeight < V3FORKHEIGHT ){
 			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
+		}else if ( nHeight == V3FORKGRANTFIX ){
+			//NOTE: PLEASE NOTE THAT GRANT BLOCKS WERE NOT FIXED FOR 29 ELECTIONS.
+			//
+			return nForkGrantrate*29;
 		}else if ( nHeight >= V3FORKHEIGHT ){
 			return nForkGrantrate;
 		}else if ( nHeight > ( YEARHEIGHT - 1 ) ){
@@ -6162,17 +6164,19 @@ bool isGrantAwardBlock(int64 nHeight){
 		nHeight % 20 == 0
 			&& 
 		nHeight != 20 )
-	|| 
-		( nHeight > V3FORKHEIGHT
+	//Grants were not being rewarded...
+
+	||
+		( nHeight >= V3FORKGRANTFIX
 			&&
-		nHeight - V3FORKHEIGHT % GRANTBLOCKINTERVALV3 == 0
-			&& 
-		nHeight != GRANTBLOCKINTERVALV3 ) ) )
+		( ( nHeight % GRANTBLOCKINTERVALV3 ) == 0 )
+		)
+		) )
 	{
-		//printf("isGrantAwardBlock : True (%d)\n", nHeight);
+		printf(" === Memorycoin Client === \n Is (%d) a grant block? : Yes \n", nHeight);
 		return true;
 	}else{
-		//printf("isGrantAwardBlock : False (%d)\n", nHeight);
+		printf(" === Memorycoin Client === \n Is (%d) a grant block? : No \n", nHeight);
 		return false;
 	}
 }
@@ -6443,7 +6447,7 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
 	
 	if( nHeight <= V3FORKHEIGHT ){
 		requiredGrantDatabaseHeight = nHeight - 20;
-	}else if( nHeight >= V3FORKHEIGHT + GRANTBLOCKINTERVALV3 ) {
+	}else if( nHeight >= V3FORKGRANTFIX ) {
  		requiredGrantDatabaseHeight = nHeight - GRANTBLOCKINTERVALV3;
 	}
 		/* else {
@@ -6684,7 +6688,7 @@ void processNextBlockIntoGrantDatabase(){
         //check deserialization is working
         //deSerializeGrantDB((GetDataDir() / "blocks/grantdb.dat").string().c_str());
 		//printf("2 current block on:%llu\n",gdBlockPointer->GetBlockHash());	
-	}else if ( gdBlockPointer->nHeight >= V3FORKHEIGHT + GRANTBLOCKINTERVALV3
+	}else if ( gdBlockPointer->nHeight >= V3FORKGRANTFIX
 		&& 
 		isGrantAwardBlock( grantDatabaseBlockHeight + GRANTBLOCKINTERVALV3 ) )
 	{
@@ -6781,9 +6785,9 @@ bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 			&& 
 			grantDatabaseBlockHeight != nHeight - 20 )
 		||
-		 ( nHeight > V3FORKHEIGHT + GRANTBLOCKINTERVALV3
+		 ( nHeight >= V3FORKGRANTFIX
 			&&
-			grantDatabaseBlockHeight != nHeight - GRANTBLOCKINTERVALV3 )
+			grantDatabaseBlockHeight != ( nHeight - GRANTBLOCKINTERVALV3 ) )
 		)
 	{ 
         printf(" === Memorycoin Client === \ngetGrantAwardsFromDatabase is being called when no awards are due. %llu %llu\n",grantDatabaseBlockHeight,nHeight);
