@@ -60,8 +60,6 @@ static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
 static const int V3FORKHEIGHT = 77280;
-static const int V3FORKHEIGHTFIXDIF = 77390;
-static const int V3FORKGRANTFIX = 79020;
 static const int YEARHEIGHT = 84840;
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
@@ -1185,8 +1183,7 @@ void PopulateRateTables(){
 //printf("Populate Rate Table\n");
 //SECTION: Initial Population of Memorycoin Lookup Tables.
 //
-//
-//SECTION: Supply Tables Population.
+////SECTION: Supply Tables Population.
 	//SECTION: Initial Supply Table Population
 	//
 	//NOTE: Each block is different. Adding 240 lines to unroll this loop would be a waste of file space. There is a trade-off!
@@ -1557,11 +1554,7 @@ int64 static GetGrantValue( int64 nHeight ){
 			return nInitialBlocksGrantTbl[ (int)( nHeight / 20 ) ];
 		}else if ( nHeight < V3FORKHEIGHT ){
 			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
-		}else if ( nHeight == V3FORKGRANTFIX ){
-			//NOTE: PLEASE NOTE THAT GRANT BLOCKS WERE NOT FIXED FOR 29 ELECTIONS.
-			//
-			return nForkGrantrate*29;
-		}else if ( nHeight >= V3FORKHEIGHT ){
+		}else if ( nHeight < YEARHEIGHT ){
 			return nForkGrantrate;
 		}else if ( nHeight > ( YEARHEIGHT - 1 ) ){
 			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT )  ) / 65520 ) ) ];
@@ -1795,112 +1788,6 @@ int64 AbsTime(int64 t0, int64 t1)
     else
         return t1 - t0;
 }
-//SECTION: Difficulty Algorithm: Temporal Retargeting
-//
-
-// temp : explanaction of Compact http://bitcoin.stackexchange.com/questions/2924/how-to-calculate-new-bits-value
-unsigned int static TemporalGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
-	static CBigNum bnCurr;
-    CBigNum bnLast;
-    bnLast.SetCompact( pindexLast->nBits );
-
-    if (bnCurr == 0)
-        bnCurr = bnLast;
-
-    // Use measurements over last 4 hours
-    unsigned int i;
-    CBigNum bnNew = 0;
-    unsigned int count = 0;
-    int64 now = (int64)pblock->nTime; // Can be out by 2hrs
-    const CBlockIndex* pindexFirst = pindexLast;
-    for ( i = 0;
-			pindexFirst
-		&& 
-			pindexFirst->pprev
-		&&
-			now - pindexFirst->GetBlockTime() < ( (int64) 40) * nV3TargetSpacing;
-		i++)
-	{
-	//NOTE: This is a loop, as long as 
-        if( *pindexFirst->pprev->phashBlock == hashGenesisBlock )
-		{
-                static int logged1;
-                if ( !logged1 ) {
-                    printf("Avoiding retarget against genesis block\n");
-                    logged1 = 1;
-                }
-                break;
-        }
-
-        if( count < ( (int64) 20) ){
-            CBigNum bnDiff;
-            bnDiff.SetCompact( pindexFirst->nBits );
-            int64 nTime = AbsTime( pindexFirst->GetBlockTime(), pindexFirst->pprev->GetBlockTime() );
-            // Adjusted difficulty
-            bnDiff *= nTime;
-            bnDiff /= nV3TargetSpacing;
-            bnNew += bnDiff;
-            count++;
-        }
-        pindexFirst = pindexFirst->pprev;
-    }
-
-    if( !count ){
-        printf("Retarget: Bumping count = 1\n");
-        bnNew = bnProofOfWorkLimit;
-        count = 1;
-    }
-    bnNew /= count;
-
-    // SECTION: SOS
-	// Temporal Retargeting - exits "blackhole" in ~3hrs
-    if( pindexLast->nHeight > ( (int64) 40 ) && count < ( (int64) 40) / 4 ){
-        int min = ( (int64) 40 ) /4 - count;
-        printf("Retarget: **** Memorycoin Temporal Retargeting **** %d/%d : factor = %d\n",
-				count,
-				(int)( (int64) 40 ) / 4,
-				(int)pow( 2.0f, min )
-				);
-
-        bnNew *= (int)pow( 2.0f, min );
-
-        printf( "Retarget: heal = %08x %s\n",
-			bnNew.GetCompact(),
-			bnNew.getuint256().ToString().c_str()
-		);
-		
-    }else{
-        // Soft limit
-        if( bnNew < bnLast / 2 ){
-            bnNew = bnLast / 2;
-        }else if( bnNew > 4 * bnLast ){
-            bnNew = 4 * bnLast;
-		}
-    }
-    // Hard limit
-    if( bnNew > bnProofOfWorkLimit ){
-        bnNew = bnProofOfWorkLimit;
-	}
-    // Only retarget every nV3Interval blocks on difficulty increase
-    if( bnNew < bnLast
-		&& 
-		( pindexLast->nHeight + 1 ) % nV3Interval != 0 ) 
-	{
-        // Sample the current block time over more blocks before
-        // increasing the difficulty.
-        return 0x1d00ffff; //pindexLast->nBits;
-    }
-
-    if ( bnCurr.GetCompact() != bnNew.GetCompact() ) {
-        printf( "Retarget: %08x %s\n", 
-			bnNew.GetCompact(), 
-			bnNew.getuint256().ToString().c_str()
-		);
-        bnCurr = bnNew;
-    }
-
-    return bnCurr.GetCompact();
-}
 
 // SECTION: GETWORK
 //
@@ -1970,12 +1857,6 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
 		return KimotoGravityWell( pindexLast, pblock );
-	} else if ( pindexLast->nHeight >= V3FORKHEIGHT && pindexLast->nHeight < V3FORKHEIGHTFIXDIF  ){
-	// } else { //NOTE: Greater than or Equal to V3ForkHeight
-		//NOTE: TESTNET
-		//return bnProofOfWorkLimit.GetCompact();
-		//NOTE: Used from Heavycoin Source-code.
-		return TemporalGetNextWorkRequired( pindexLast, pblock );
 	} else {
 		return V3KimotoGravityWell( pindexLast, pblock );
 	}
@@ -6167,7 +6048,7 @@ bool isGrantAwardBlock(int64 nHeight){
 	//Grants were not being rewarded...
 
 	||
-		( nHeight >= V3FORKGRANTFIX
+		( nHeight > V3FORKHEIGHT
 			&&
 		( ( nHeight % GRANTBLOCKINTERVALV3 ) == 0 )
 		)
@@ -6447,7 +6328,7 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
 	
 	if( nHeight <= V3FORKHEIGHT ){
 		requiredGrantDatabaseHeight = nHeight - 20;
-	}else if( nHeight >= V3FORKGRANTFIX ) {
+	}else if( nHeight > V3FORKHEIGHT ) {
  		requiredGrantDatabaseHeight = nHeight - GRANTBLOCKINTERVALV3;
 	}
 		/* else {
@@ -6688,7 +6569,7 @@ void processNextBlockIntoGrantDatabase(){
         //check deserialization is working
         //deSerializeGrantDB((GetDataDir() / "blocks/grantdb.dat").string().c_str());
 		//printf("2 current block on:%llu\n",gdBlockPointer->GetBlockHash());	
-	}else if ( gdBlockPointer->nHeight >= V3FORKGRANTFIX
+	}else if ( gdBlockPointer->nHeight > V3FORKHEIGHT
 		&& 
 		isGrantAwardBlock( grantDatabaseBlockHeight + GRANTBLOCKINTERVALV3 ) )
 	{
@@ -6785,7 +6666,7 @@ bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 			&& 
 			grantDatabaseBlockHeight != nHeight - 20 )
 		||
-		 ( nHeight >= V3FORKGRANTFIX
+		 ( nHeight > V3FORKHEIGHT
 			&&
 			grantDatabaseBlockHeight != ( nHeight - GRANTBLOCKINTERVALV3 ) )
 		)
