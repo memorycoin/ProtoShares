@@ -12,7 +12,7 @@
 const std::string CLIENT_NAME("Memorycoin");
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   "3.000.002"
+#define CLIENT_VERSION_SUFFIX   "3.000.010"
 
 // The following part of the code determines the CLIENT_BUILD variable.
 // Several mechanisms are used for this:
