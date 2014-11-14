@@ -1505,6 +1505,14 @@ int64 static GetBlockSubsidy(int nHeight){
 			// Blocks 240-77279
 			return (int64) nV2rateTbl[ (int)( floor( nHeight / 1680 ) ) ];
 		}else if( nHeight < YEARHEIGHT ){
+			//SECTION: FIX FOR NEW NET
+			if( nHeight == V3FORKHEIGHT ){
+				return return (int64) nForkrate + (int64) 1;
+			}
+			if( nHeight == (V3FORKHEIGHT+1) ){
+				return return (int64) nForkrate - (int64) 1;
+			}
+			//
 			//SECTION: v3 Parameters
 			// Blocks 75600-84419 (8 weeks)
 			if( nHeight == YEARHEIGHT - 1) {
@@ -1556,7 +1564,7 @@ int64 static GetGrantValue( int64 nHeight ){
 			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
 		}else if ( nHeight < YEARHEIGHT ){
 			return nForkGrantrate;
-		}else if ( nHeight > ( YEARHEIGHT - 1 ) ){
+		}else /*if ( nHeight > ( YEARHEIGHT - 1 ) )*/ {
 			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT )  ) / 65520 ) ) ];
 		}
 		//NOTE: This should cover until block 3361679.
@@ -1721,10 +1729,8 @@ unsigned int static V3KimotoGravityWell(const CBlockIndex* pindexLast, const CBl
         else { PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev; }
         PastDifficultyAveragePrev = PastDifficultyAverage;
 
-        if(LatestBlockTime < BlockReading->GetBlockTime()) {
-			if(BlockReading->nHeight > 35720)
-				LatestBlockTime = BlockReading->GetBlockTime();
-		}
+		LatestBlockTime = BlockReading->GetBlockTime();
+		
 		PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
         PastRateTargetSeconds = (uint64) 480 * PastBlocksMass;
         PastRateAdjustmentRatio = double(1);
