@@ -1507,10 +1507,10 @@ int64 static GetBlockSubsidy(int nHeight){
 		}else if( nHeight < YEARHEIGHT ){
 			//SECTION: FIX FOR NEW NET
 			if( nHeight == V3FORKHEIGHT ){
-				return return (int64) nForkrate + (int64) 1;
+				return (int64) nForkrate + (int64) 1;
 			}
 			if( nHeight == (V3FORKHEIGHT+1) ){
-				return return (int64) nForkrate - (int64) 1;
+				return (int64) nForkrate - (int64) 1;
 			}
 			//
 			//SECTION: v3 Parameters
