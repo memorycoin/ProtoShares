@@ -1203,13 +1203,15 @@ void MapPort(bool)
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strMainNetDNSSeed[][2] = {
-//SECTION: SSED CHURN NODES and HIGH-PERFORMANCE NETWORK NODES
+//SECTION: SEED CHURN NODES and HIGH-PERFORMANCE NETWORK NODES
 //
 //SECTION: LAST PRIORITY
 //
 	{"69.197.148.23","69.197.148.23"},
 	{"69.197.148.4","69.197.148.4"},
 	//SECTION: Sensitive MMC-Square Server Churn Nodes
+		//
+	//NOTE: Maintained by MMC Dev. Team
 	//NOTE: These nodes are running p2pool software. (x2 P2Pools)
 	{"108.61.133.154","108.61.133.154"},
 	{"108.61.133.157","108.61.133.157"},
@@ -1218,15 +1220,15 @@ static const char *strMainNetDNSSeed[][2] = {
 };
 
 static const string strMainNetChurnNodesNonDefault[] = {
-	//SECTION: Mmc-square Churn Performance Nodes (10)
-	//
+	//SECTION: Mmc-square Churn Performance Nodes (4)
+		//
 	//NOTE: Maintained by MMC Dev. Team
     "108.61.133.157:1969",
     "108.61.133.157:1970",
 	"108.61.133.157:1971",
 	"108.61.133.157:1972",
-	//SECTION: Santana.mmc-square Churn Performance Nodes (10)
-	//
+	//SECTION: Santana.mmc-square Churn Performance Nodes (4)
+		//
 	//NOTE: Maintained by MMC Dev. Team
     "108.61.133.154:1969",
     "108.61.133.154:1970",
@@ -1237,15 +1239,17 @@ static const string strMainNetChurnNodesNonDefault[] = {
 static const string strMainNetStandardNodesNonDefault[] = {
 //SECTION: Standard Nodes: For normal network usage
 //
-	//SECTION: Santana.mmc-square (Spicy) Standard Performance Nodes (10)
-	//
 	//SECTION: Sayley.mmc-square.com Standard Performance Nodes (5)
+		//
+	//NOTE: Maintained by MMC Dev. Team
 	"69.197.148.23:1969",
 	"69.197.148.23:1970",
 	"69.197.148.23:1971",
 	"69.197.148.23:1972",
 	"69.197.148.23:1973",
 	//SECTION: Sunbeam.mmc-square.com Standard Performance Nodes (5)
+		//
+	//NOTE: Maintained by MMC Dev. Team
 	"69.197.148.4:1969",
 	"69.197.148.4:1970",
 	"69.197.148.4:1971",
