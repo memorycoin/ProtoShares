@@ -61,6 +61,9 @@ static int64 nInitialBlocksGrantTbl[12];
 
 static const int V3FORKHEIGHT = 77280;
 static const int YEARHEIGHT = 84840;
+
+static const int V3TXFIXHEIGHT = 78480;
+
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
 
@@ -1035,7 +1038,9 @@ int CMerkleTx::GetBlocksToMaturity() const
 	//NOTE: *heightOut is height of block containing this tx.
 	//NOTE: Coins from V3FORKHEIGHT mature at the same rate. The next block AFTER the hard fork will provide coins that mature at the new rate.
 	if (height < V3FORKHEIGHT){
-		return max(0, COINBASE_MATURITY - depthInMainChain );
+		return max(0, ( COINBASE_MATURITY + 20 ) - depthInMainChain );
+	} else if (height >= V3TXFIXHEIGHT){
+		return max(0, ( COINBASE_MATURITY_V3 + 11 ) - depthInMainChain );
 	} else {
 		return max(0, COINBASE_MATURITY_V3 - depthInMainChain );
 	}
