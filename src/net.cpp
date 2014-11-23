@@ -1207,6 +1207,8 @@ static const char *strMainNetDNSSeed[][2] = {
 //
 //SECTION: LAST PRIORITY
 //
+	{"69.197.148.23","69.197.148.23"},
+	{"69.197.148.4","69.197.148.4"},
 	//SECTION: Sensitive MMC-Square Server Churn Nodes
 	//NOTE: These nodes are running p2pool software. (x2 P2Pools)
 	{"108.61.133.154","108.61.133.154"},
@@ -1223,25 +1225,13 @@ static const string strMainNetChurnNodesNonDefault[] = {
     "108.61.133.157:1970",
 	"108.61.133.157:1971",
 	"108.61.133.157:1972",
-    "108.61.133.157:1973",
-    "108.61.133.157:1974",
-    "108.61.133.157:1975",
-    "108.61.133.157:1976",
-    "108.61.133.157:1977",
-    "108.61.133.157:1978",
 	//SECTION: Santana.mmc-square Churn Performance Nodes (10)
 	//
 	//NOTE: Maintained by MMC Dev. Team
     "108.61.133.154:1969",
     "108.61.133.154:1970",
     "108.61.133.154:1971",
-    "108.61.133.154:1972",
-    "108.61.133.154:1973",
-    "108.61.133.154:1974",
-    "108.61.133.154:1975",
-    "108.61.133.154:1976",
-    "108.61.133.154:1977",
-    "108.61.133.154:1978"
+    "108.61.133.154:1972"
 };
 
 static const string strMainNetStandardNodesNonDefault[] = {
@@ -1249,16 +1239,18 @@ static const string strMainNetStandardNodesNonDefault[] = {
 //
 	//SECTION: Santana.mmc-square (Spicy) Standard Performance Nodes (10)
 	//
-	"108.61.133.154:1979",
-	"108.61.133.154:1980", 
-	"108.61.133.154:1981", 
-	"108.61.133.154:1982", 
-	"108.61.133.154:1983", 
-	"108.61.133.154:1984", 
-	"108.61.133.154:1985", 
-	"108.61.133.154:1986", 
-	"108.61.133.154:1987", 
-	"108.61.133.154:1988" 
+	//SECTION: Sayley.mmc-square.com Standard Performance Nodes (5)
+	"69.197.148.23:1969",
+	"69.197.148.23:1970",
+	"69.197.148.23:1971",
+	"69.197.148.23:1972",
+	"69.197.148.23:1973",
+	//SECTION: Sunbeam.mmc-square.com Standard Performance Nodes (5)
+	"69.197.148.4:1969",
+	"69.197.148.4:1970",
+	"69.197.148.4:1971",
+	"69.197.148.4:1972",
+	"69.197.148.4:1973"
 	};
 static const char *strTestNetDNSSeed[][2] = {
     // {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
