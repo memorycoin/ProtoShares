@@ -51,7 +51,9 @@ static int64 nInflationRateTblFix[51];
 static int64 nMaxMoneyTbl[52];
 
 static int64 nForkrate;
+static int64 nForkrate2;
 static int64 nForkGrantrate;
+static int64 nForkGrantrate2;
 
 static int64 nV2rateTbl[50];
 static int64 nV2grantrateTbl[50];
@@ -60,9 +62,11 @@ static int64 nInitialBlocksRateTbl[240];
 static int64 nInitialBlocksGrantTbl[12];
 
 static const int V3FORKHEIGHT = 77280;
-static const int YEARHEIGHT = 84840;
 
 static const int V3TXFIXHEIGHT = 78480;
+static const int V3SFIXHEIGHT = 83580;
+
+static const int YEARHEIGHT = 84840;
 
 CCriticalSection cs_setpwalletRegistered;
 set<CWallet*> setpwalletRegistered;
@@ -1232,12 +1236,13 @@ void PopulateRateTables(){
 	//SECTION: V3 Supply Table Population
 	//
 	//NOTE: Clustered these values for the remaining weeks of the mining schedule.
-	if ( nForkrate != (int64) 3941396608 
+	if ( nForkrate2 != (int64) 2043188877 
 		||
-		nForkGrantrate != (int64) 2515785069 )
+		nForkGrantrate2 != (int64) 1304163113 )
 	{
 		//39.41396608
 		nForkrate = (int64) 3941396608;
+		nForkrate2 = (int64) 2043188877;
 		
 		//SECTION - Fork Grant Rates
 		//
@@ -1245,6 +1250,7 @@ void PopulateRateTables(){
 		
 		//25.15785069
 		nForkGrantrate = (int64) 2515785069;
+		nForkGrantrate2 = (int64) 1304163113;
 	
 	}
 	/*	
@@ -1374,10 +1380,10 @@ void PopulateRateTables(){
 		nGrantInflationRateTbl[49] = (int64) 2899793179;//28.99793179;
 		nGrantInflationRateTbl[50] = (int64) 2957789042;//29.57789042;
 		
-		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0] + 61279; // Year 1 - Fix
+		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0] + 62046; // Year 1 - Fix
 		nInflationRateTblFix[1]  = (int64) nInflationRateTbl[1] + 44519; // Year 2 - Fix
 		nInflationRateTblFix[2]  = (int64) nInflationRateTbl[2] + 34559; // Year 3 - Fix
-		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3] + 84080;
+		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3] + 64080;
 		nInflationRateTblFix[4]  = (int64) nInflationRateTbl[4] + 27360;
 		nInflationRateTblFix[5]  = (int64) nInflationRateTbl[5] + 4320;
 		nInflationRateTblFix[6]  = (int64) nInflationRateTbl[6] + 59444;
@@ -1519,10 +1525,16 @@ int64 static GetBlockSubsidy(int nHeight){
 			}
 			//
 			//SECTION: v3 Parameters
-			// Blocks 75600-84419 (8 weeks)
+			// Blocks 77280-83579
 			if( nHeight == YEARHEIGHT - 1) {
-				//NOTE: This block will get us  to 10 million.
-				return (int64) nForkrate + (int64) 3124;	
+				//NOTE: This block will get us  to 10 million total coins.
+				return (int64) nForkrate + (int64) 767;	
+			}
+			
+			//NOTE: LAST WEEK OF SUPPLY FIX
+			if( nHeight > YEARHEIGHT - 1 && nHeight <= V3SFIXHEIGHT) {
+				//NOTE: This block will get us  to 10 million total coins.
+				return (int64) nForkrate2;	
 			}
 			
 			return (int64) nForkrate;
@@ -1553,9 +1565,11 @@ void static SetMaxMoney( int64 BlockHeight ){
 	if( BlockHeight < ( YEARHEIGHT - 1 )  ){
 		MAX_MONEY = nMaxMoneyTbl[0];
 	}else if( BlockHeight > ( YEARHEIGHT - 1 )  ){
-		MAX_MONEY =  nMaxMoneyTbl[ (int)( 1 + ( floor( ( BlockHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ) ];
+		//NOTE: Leeway of 1/1000th of a coin - Just to be safe
+		//
+		MAX_MONEY =  nMaxMoneyTbl[ (int)( 1 + ( floor( ( BlockHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ) ] + (int64) 100000;
 	}else{
-		MAX_MONEY =  nMaxMoneyTbl[0];
+		MAX_MONEY =  nMaxMoneyTbl[0] + (int64) 100000;
 	}
 	
 	printf(" === Memorycoin Client === \nSet Max Money to $llu\n", MAX_MONEY);
@@ -1567,12 +1581,13 @@ int64 static GetGrantValue( int64 nHeight ){
 			return nInitialBlocksGrantTbl[ (int)( nHeight / 20 ) ];
 		}else if ( nHeight < V3FORKHEIGHT ){
 			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
+		}else if ( nHeight < YEARHEIGHT && nHeight >= V3SFIXHEIGHT ){
+			return nForkGrantrate2;
 		}else if ( nHeight < YEARHEIGHT ){
 			return nForkGrantrate;
-		}else /*if ( nHeight > ( YEARHEIGHT - 1 ) )*/ {
+		}else{
 			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT )  ) / 65520 ) ) ];
 		}
-		//NOTE: This should cover until block 3361679.
 	}
 	return false;
 }

@@ -1190,14 +1190,6 @@ void MapPort(bool)
 }
 #endif
 
-
-
-
-
-
-
-
-
 // DNS seeds
 // Each pair gives a source name and a seed name.
 // The first name is used as information source for addrman.
@@ -1207,14 +1199,12 @@ static const char *strMainNetDNSSeed[][2] = {
 //
 //SECTION: LAST PRIORITY
 //
-	{"69.197.148.23","69.197.148.23"},
-	{"69.197.148.4","69.197.148.4"},
-	//SECTION: Sensitive MMC-Square Server Churn Nodes
+	//SECTION: MMC-Square Server Churn Nodes
 		//
 	//NOTE: Maintained by MMC Dev. Team
-	//NOTE: These nodes are running p2pool software. (x2 P2Pools)
-	{"108.61.133.154","108.61.133.154"},
-	{"108.61.133.157","108.61.133.157"},
+	{"173.208.222.162","173.208.222.162"},
+	{"23.229.7.140","23.229.7.140"},
+	{"23.239.64.44","23.239.64.44"},
 	//
     {NULL, NULL}
 };
@@ -1223,38 +1213,28 @@ static const string strMainNetChurnNodesNonDefault[] = {
 	//SECTION: Mmc-square Churn Performance Nodes (4)
 		//
 	//NOTE: Maintained by MMC Dev. Team
-    "108.61.133.157:1969",
-    "108.61.133.157:1970",
-	"108.61.133.157:1971",
-	"108.61.133.157:1972",
-	//SECTION: Santana.mmc-square Churn Performance Nodes (4)
-		//
-	//NOTE: Maintained by MMC Dev. Team
-    "108.61.133.154:1969",
-    "108.61.133.154:1970",
-    "108.61.133.154:1971",
-    "108.61.133.154:1972"
+    "173.208.222.162:1969",
+    "173.208.222.162:1970",
+    "173.208.222.162:1971",
+    "173.208.222.162:1972",
+    "173.208.222.162:1973",
+	
+    "23.229.7.140:1971",
+    "23.229.7.140:1972",
+    "23.229.7.140:1973"
 };
 
 static const string strMainNetStandardNodesNonDefault[] = {
-//SECTION: Standard Nodes: For normal network usage
-//
-	//SECTION: Sayley.mmc-square.com Standard Performance Nodes (5)
-		//
-	//NOTE: Maintained by MMC Dev. Team
-	"69.197.148.23:1969",
-	"69.197.148.23:1970",
-	"69.197.148.23:1971",
-	"69.197.148.23:1972",
-	"69.197.148.23:1973",
-	//SECTION: Sunbeam.mmc-square.com Standard Performance Nodes (5)
-		//
-	//NOTE: Maintained by MMC Dev. Team
-	"69.197.148.4:1969",
-	"69.197.148.4:1970",
-	"69.197.148.4:1971",
-	"69.197.148.4:1972",
-	"69.197.148.4:1973"
+	//SECTION: Standard Nodes: For normal network usage
+	//
+	"23.229.7.140:1969",
+	"23.229.7.140:1970",
+	
+	"23.239.64.44:1969",
+	"23.239.64.44:1970",
+	"23.239.64.44:1971",
+	"23.239.64.44:1972",
+	"23.239.64.44:1973"
 	};
 static const char *strTestNetDNSSeed[][2] = {
     // {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
