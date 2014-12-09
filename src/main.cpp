@@ -1883,9 +1883,94 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	// pindexLast->nHeight <= 73000){
 		//NOTE: Old Memorycoin V2 KGW Algo
 		return KimotoGravityWell( pindexLast, pblock );
-	} else {
+	} else if ( pindexlast->nHeight < V3SFIXHEIGHT ) {
 		return V3KimotoGravityWell( pindexLast, pblock );
+	} else {
+		return V3FixKimotoGravityWell( pindexLast, pblock );
 	}
+}
+
+unsigned int static V3FixKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+{
+    static const int64 BlocksTargetSpacing = 8 * 60; // 8 minutes
+    unsigned int TimeDaySeconds = 60 * 60 * 24;
+    int64 PastSecondsMin = TimeDaySeconds*0.25;
+    int64 PastSecondsMax = TimeDaySeconds*1;
+    uint64 PastBlocksMin = PastSecondsMin / BlocksTargetSpacing;
+    uint64 PastBlocksMax = PastSecondsMax / BlocksTargetSpacing;
+
+    return V3CalcKimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
+}
+
+unsigned int static V3CalcKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) {
+
+    const CBlockIndex *BlockLastSolved = pindexLast;
+    const CBlockIndex *BlockReading = pindexLast;
+    const CBlockHeader *BlockCreating = pblock;
+	
+	BlockCreating = BlockCreating;
+	
+    uint64 PastBlocksMass = 0;
+    int64 PastRateActualSeconds = 0;
+    int64 PastRateTargetSeconds = 0;
+    double PastRateAdjustmentRatio = double(1);
+    CBigNum PastDifficultyAverage;
+    CBigNum PastDifficultyAveragePrev;
+    double EventHorizonDeviation;
+    double EventHorizonDeviationFast;
+    double EventHorizonDeviationSlow;
+
+    if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 || (uint64)BlockLastSolved->nHeight < PastBlocksMin) { return bnProofOfWorkLimit.GetCompact(); }
+	int64 LatestBlockTime = BlockLastSolved->GetBlockTime();
+    for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
+        if (PastBlocksMax > 0 && i > PastBlocksMax) { break; }
+        PastBlocksMass++;
+
+        if (i == 1) { PastDifficultyAverage.SetCompact(BlockReading->nBits); }
+        else { PastDifficultyAverage = ((CBigNum().SetCompact(BlockReading->nBits) - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev; }
+        PastDifficultyAveragePrev = PastDifficultyAverage;
+
+        if(LatestBlockTime < BlockReading->GetBlockTime()) {
+			LatestBlockTime = BlockReading->GetBlockTime();
+		}
+		PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
+        PastRateTargetSeconds = TargetBlocksSpacingSeconds * PastBlocksMass;
+        PastRateAdjustmentRatio = double(1);
+
+		//NOTE: KGW FIX
+		if(PastRateActualSeconds < 0) { PastRateActualSeconds = 0; }
+
+        if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
+        PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
+        }
+        EventHorizonDeviation = 1 + (0.7084 * pow((double(PastBlocksMass)/double(144)), -1.228));
+        EventHorizonDeviationFast = EventHorizonDeviation;
+        EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
+
+        if (PastBlocksMass >= PastBlocksMin) {
+            if ((PastRateAdjustmentRatio <= EventHorizonDeviationSlow) || (PastRateAdjustmentRatio >= EventHorizonDeviationFast)) { assert(BlockReading); break; }
+        }
+        if (BlockReading->pprev == NULL) { assert(BlockReading); break; }
+        BlockReading = BlockReading->pprev;
+    }
+
+    CBigNum bnNew(PastDifficultyAverage);
+    if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
+        bnNew *= PastRateActualSeconds;
+        bnNew /= PastRateTargetSeconds;
+    }
+    if (bnNew > bnProofOfWorkLimit) { bnNew = bnProofOfWorkLimit; }
+
+    /// debug print
+	printf("--------\n");
+    printf("Difficulty Retarget - Kimoto Gravity Well\n");
+    printf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
+    printf("Before: %08x %s\n", BlockLastSolved->nBits, CBigNum().SetCompact(BlockLastSolved->nBits).getuint256().ToString().c_str());
+    printf("After: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
+	printf("--------\n");
+
+
+    return bnNew.GetCompact();
 }
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
