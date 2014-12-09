@@ -1,7 +1,7 @@
 TEMPLATE = app
 TARGET = memorycoind
 #macx:TARGET = "Memorycoin-Qt"
-VERSION = 3.010.002
+VERSION = 3.010.100
 INCLUDEPATH += src src/json 
 QT += network 
 DEFINES += BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE

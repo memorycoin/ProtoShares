@@ -1043,6 +1043,9 @@ int CMerkleTx::GetBlocksToMaturity() const
 	//NOTE: Coins from V3FORKHEIGHT mature at the same rate. The next block AFTER the hard fork will provide coins that mature at the new rate.
 	if (height < V3FORKHEIGHT){
 		return max(0, ( COINBASE_MATURITY + 20 ) - depthInMainChain );
+	} else if (height >= V3SFIXHEIGHT){
+	//NOTE: Revert changes for compatibility.
+		return max(0, ( COINBASE_MATURITY_V3 + 20 ) - depthInMainChain ); 
 	} else if (height >= V3TXFIXHEIGHT){
 		return max(0, ( COINBASE_MATURITY_V3 + 11 ) - depthInMainChain );
 	} else {

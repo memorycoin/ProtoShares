@@ -1232,9 +1232,7 @@ static const string strMainNetStandardNodesNonDefault[] = {
 	
 	"23.239.64.44:1969",
 	"23.239.64.44:1970",
-	"23.239.64.44:1971",
-	"23.239.64.44:1972",
-	"23.239.64.44:1973"
+	"23.239.64.44:1971"
 	};
 static const char *strTestNetDNSSeed[][2] = {
     // {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
