@@ -1206,7 +1206,7 @@ static const char *strMainNetDNSSeed[][2] = {
 	{"23.229.7.140","23.229.7.140"},
 	{"23.239.64.44","23.239.64.44"},
 	//
-    {NULL, NULL}
+    	{NULL, NULL}
 };
 
 static const string strMainNetChurnNodesNonDefault[] = {
@@ -1216,8 +1216,6 @@ static const string strMainNetChurnNodesNonDefault[] = {
     "173.208.222.162:1969",
     "173.208.222.162:1970",
     "173.208.222.162:1971",
-    "173.208.222.162:1972",
-    "173.208.222.162:1973",
 	
     "23.229.7.140:1971",
     "23.229.7.140:1972",
@@ -1232,7 +1230,9 @@ static const string strMainNetStandardNodesNonDefault[] = {
 	
 	"23.239.64.44:1969",
 	"23.239.64.44:1970",
-	"23.239.64.44:1971"
+	"23.239.64.44:1971",
+	"23.239.64.44:1972",
+	"23.239.64.44:1973"
 	};
 static const char *strTestNetDNSSeed[][2] = {
     // {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
