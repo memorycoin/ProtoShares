@@ -1872,18 +1872,6 @@ unsigned int static OldGetNextWorkRequired(const CBlockIndex* pindexLast, const 
 	}
 }
 
-unsigned int static V3FixKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
-{
-    static const int64 BlocksTargetSpacing = 8 * 60; // 8 minutes
-    unsigned int TimeDaySeconds = 60 * 60 * 24;
-    int64 PastSecondsMin = TimeDaySeconds*0.25;
-    int64 PastSecondsMax = TimeDaySeconds*1;
-    uint64 PastBlocksMin = PastSecondsMin / BlocksTargetSpacing;
-    uint64 PastBlocksMax = PastSecondsMax / BlocksTargetSpacing;
-
-    return V3CalcKimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
-}
-
 unsigned int static V3CalcKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) {
     const CBlockIndex *BlockLastSolved = pindexLast;
     const CBlockIndex *BlockReading = pindexLast;
@@ -1952,6 +1940,17 @@ BlockCreating = BlockCreating;
     return bnNew.GetCompact();
 }
 
+unsigned int static V3FixKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+{
+    static const int64 BlocksTargetSpacing = 8 * 60; // 8 minutes
+    unsigned int TimeDaySeconds = 60 * 60 * 24;
+    int64 PastSecondsMin = TimeDaySeconds*0.25;
+    int64 PastSecondsMax = TimeDaySeconds*1;
+    uint64 PastBlocksMin = PastSecondsMin / BlocksTargetSpacing;
+    uint64 PastBlocksMax = PastSecondsMax / BlocksTargetSpacing;
+
+    return V3CalcKimotoGravityWell(pindexLast, pblock, BlocksTargetSpacing, PastBlocksMin, PastBlocksMax);
+}
 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
@@ -1965,7 +1964,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
 		//NOTE: Old Memorycoin V2 KGW Algo
 		return KimotoGravityWell( pindexLast, pblock );
-	} else if ( pindexlast->nHeight < V3SFIXHEIGHT ) {
+	} else if ( pindexLast->nHeight < V3SFIXHEIGHT ) {
 		return V3KimotoGravityWell( pindexLast, pblock );
 	} else {
 		return V3FixKimotoGravityWell( pindexLast, pblock );
