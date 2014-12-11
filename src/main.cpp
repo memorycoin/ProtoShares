@@ -1872,27 +1872,6 @@ unsigned int static OldGetNextWorkRequired(const CBlockIndex* pindexLast, const 
 	}
 }
 
-unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
-{
-    assert( pindexLast );
-	if ( fTestNet ) {
-		return bnProofOfWorkLimit.GetCompact();
-	}
-	
-	if ( pindexLast->nHeight < 607 ){
-		return OldGetNextWorkRequired( pindexLast, pblock );
-	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
-	//TODO: TESTNET
-	// pindexLast->nHeight <= 73000){
-		//NOTE: Old Memorycoin V2 KGW Algo
-		return KimotoGravityWell( pindexLast, pblock );
-	} else if ( pindexlast->nHeight < V3SFIXHEIGHT ) {
-		return V3KimotoGravityWell( pindexLast, pblock );
-	} else {
-		return V3FixKimotoGravityWell( pindexLast, pblock );
-	}
-}
-
 unsigned int static V3FixKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
     static const int64 BlocksTargetSpacing = 8 * 60; // 8 minutes
@@ -1906,13 +1885,10 @@ unsigned int static V3FixKimotoGravityWell(const CBlockIndex* pindexLast, const 
 }
 
 unsigned int static V3CalcKimotoGravityWell(const CBlockIndex* pindexLast, const CBlockHeader *pblock, uint64 TargetBlocksSpacingSeconds, uint64 PastBlocksMin, uint64 PastBlocksMax) {
-
     const CBlockIndex *BlockLastSolved = pindexLast;
     const CBlockIndex *BlockReading = pindexLast;
     const CBlockHeader *BlockCreating = pblock;
-	
-	BlockCreating = BlockCreating;
-	
+BlockCreating = BlockCreating;
     uint64 PastBlocksMass = 0;
     int64 PastRateActualSeconds = 0;
     int64 PastRateTargetSeconds = 0;
@@ -1934,15 +1910,17 @@ unsigned int static V3CalcKimotoGravityWell(const CBlockIndex* pindexLast, const
         PastDifficultyAveragePrev = PastDifficultyAverage;
 
         if(LatestBlockTime < BlockReading->GetBlockTime()) {
-			LatestBlockTime = BlockReading->GetBlockTime();
+			if(BlockReading->nHeight > 35720)
+				LatestBlockTime = BlockReading->GetBlockTime();
 		}
 		PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
         PastRateTargetSeconds = TargetBlocksSpacingSeconds * PastBlocksMass;
         PastRateAdjustmentRatio = double(1);
-
-		//NOTE: KGW FIX
-		if(PastRateActualSeconds < 0) { PastRateActualSeconds = 0; }
-
+        if(BlockReading->nHeight > 35720) {
+			if(PastRateActualSeconds < 1) { PastRateActualSeconds = 1; }
+		} else {
+			if(PastRateActualSeconds < 0) { PastRateActualSeconds = 0; }
+		}
         if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
         PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
         }
@@ -1965,15 +1943,33 @@ unsigned int static V3CalcKimotoGravityWell(const CBlockIndex* pindexLast, const
     if (bnNew > bnProofOfWorkLimit) { bnNew = bnProofOfWorkLimit; }
 
     /// debug print
-	printf("--------\n");
     printf("Difficulty Retarget - Kimoto Gravity Well\n");
     printf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
     printf("Before: %08x %s\n", BlockLastSolved->nBits, CBigNum().SetCompact(BlockLastSolved->nBits).getuint256().ToString().c_str());
     printf("After: %08x %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
-	printf("--------\n");
 
 
     return bnNew.GetCompact();
+}
+
+
+unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
+{
+    assert( pindexLast );
+	if ( fTestNet ) {
+		return bnProofOfWorkLimit.GetCompact();
+	}
+	
+	if ( pindexLast->nHeight < 607 ){
+		return OldGetNextWorkRequired( pindexLast, pblock );
+	} else if ( pindexLast->nHeight < (V3FORKHEIGHT-1) ){
+		//NOTE: Old Memorycoin V2 KGW Algo
+		return KimotoGravityWell( pindexLast, pblock );
+	} else if ( pindexlast->nHeight < V3SFIXHEIGHT ) {
+		return V3KimotoGravityWell( pindexLast, pblock );
+	} else {
+		return V3FixKimotoGravityWell( pindexLast, pblock );
+	}
 }
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits)
