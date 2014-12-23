@@ -1536,7 +1536,7 @@ int64 static GetBlockSubsidy(int nHeight){
 			
 			//NOTE: LAST WEEK OF SUPPLY FIX
 			if( nHeight >= V3SFIXHEIGHT) {
-				//NOTE: This block will get us  to 10 million total coins.
+				//NOTE: Conditional Fixed.
 				return (int64) nForkrate2;	
 			}
 			
