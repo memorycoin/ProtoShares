@@ -1195,7 +1195,8 @@ void PopulateRateTables(){
 //printf("Populate Rate Table\n");
 //SECTION: Initial Population of Memorycoin Lookup Tables.
 //
-////SECTION: Supply Tables Population.
+//
+//SECTION: Supply Tables Population.
 	//SECTION: Initial Supply Table Population
 	//
 	//NOTE: Each block is different. Adding 240 lines to unroll this loop would be a waste of file space. There is a trade-off!
@@ -1535,8 +1536,13 @@ int64 static GetBlockSubsidy(int nHeight){
 			}
 			
 			//NOTE: LAST WEEK OF SUPPLY FIX
+<<<<<<< HEAD
 			if( nHeight >= V3SFIXHEIGHT) {
 				//NOTE: Conditional Fixed.
+=======
+			if( nHeight < YEARHEIGHT - 1 && nHeight >= V3SFIXHEIGHT) {
+				//NOTE: This block will get us  to 10 million total coins.
+>>>>>>> origin/psforkinit
 				return (int64) nForkrate2;	
 			}
 			
