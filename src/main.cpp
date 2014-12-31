@@ -1274,7 +1274,7 @@ void PopulateRateTables(){
 //printf("V3 Tables done.\n Inflation Tables...\n");	
 	if (nInflationRateTbl[50] != (int64) 772311583 
 		|| 
-		nGrantInflationRateTbl[50] != (int64) 2957789042 
+		nGrantInflationRateTbl[50] != (int64) 492964840 
 		|| 
 		( nInflationRateTblFix[50] != (int64) nInflationRateTbl[50] + (int64) 28422 ))
 	{
@@ -1331,68 +1331,68 @@ void PopulateRateTables(){
 		nInflationRateTbl[50]  = (int64) 772311583; //7.72311583;
 		//Grant Values v 3
 		//Paid out every  60 blocks or 8 hours.
-		nGrantInflationRateTbl[0]  = (int64) 1098901098;//10.98901098;
-		nGrantInflationRateTbl[1]  = (int64) 1120879120;//11.20879120;
-		nGrantInflationRateTbl[2]  = (int64) 1143296703;//11.43296703;
-		nGrantInflationRateTbl[3]  = (int64) 1166162637;//11.66162637;
-		nGrantInflationRateTbl[4]  = (int64) 1189485890;//11.89485890;
-		nGrantInflationRateTbl[5]  = (int64) 1213275607;//12.13275607;
-		nGrantInflationRateTbl[6]  = (int64) 1237541120;//12.37541120;
-		nGrantInflationRateTbl[7]  = (int64) 1262291942;//12.62291942;
-		nGrantInflationRateTbl[8]  = (int64) 1287537781;//12.87537781;
-		nGrantInflationRateTbl[9]  = (int64) 1313288536;//13.13288536;
-		nGrantInflationRateTbl[10] = (int64) 1339554307;//13.39554307;
-		nGrantInflationRateTbl[11] = (int64) 1366345393;//13.66345393;
-		nGrantInflationRateTbl[12] = (int64) 1393672301;//13.93672301;
-		nGrantInflationRateTbl[13] = (int64) 1421545747;//14.21545747;
-		nGrantInflationRateTbl[14] = (int64) 1449976662;//14.49976662;
-		nGrantInflationRateTbl[15] = (int64) 1478976195;//14.78976195;
-		nGrantInflationRateTbl[16] = (int64) 1508555719;//15.08555719;
-		nGrantInflationRateTbl[17] = (int64) 1538726834;//15.38726834;
-		nGrantInflationRateTbl[18] = (int64) 1569501370;//15.69501370;
-		nGrantInflationRateTbl[19] = (int64) 1600891398;//16.00891398;
-		nGrantInflationRateTbl[20] = (int64) 1632909226;//16.32909226;
-		nGrantInflationRateTbl[21] = (int64) 1665567410;//16.65567410;
-		nGrantInflationRateTbl[22] = (int64) 1698878759;//16.98878759;
-		nGrantInflationRateTbl[23] = (int64) 1732856334;//17.32856334;
-		nGrantInflationRateTbl[24] = (int64) 1767513460;//17.67513460;
-		nGrantInflationRateTbl[25] = (int64) 1802863730;//18.02863730;
-		nGrantInflationRateTbl[26] = (int64) 1838921004;//18.38921004;
-		nGrantInflationRateTbl[27] = (int64) 1875699424;//18.75699424;
-		nGrantInflationRateTbl[28] = (int64) 1913213413;//19.13213413;
-		nGrantInflationRateTbl[29] = (int64) 1951477681;//19.51477681;
-		nGrantInflationRateTbl[30] = (int64) 1990507235;//19.90507235;
-		nGrantInflationRateTbl[31] = (int64) 2030317379;//20.30317379;
-		nGrantInflationRateTbl[32] = (int64) 2070923727;//20.70923727;
-		nGrantInflationRateTbl[33] = (int64) 2112342202;//21.12342202;
-		nGrantInflationRateTbl[34] = (int64) 2154589046;//21.54589046;
-		nGrantInflationRateTbl[35] = (int64) 2197680827;//21.97680827;
-		nGrantInflationRateTbl[36] = (int64) 2241634443;//22.41634443;
-		nGrantInflationRateTbl[37] = (int64) 2286467132;//22.86467132;
-		nGrantInflationRateTbl[38] = (int64) 2332196475;//23.32196475;
-		nGrantInflationRateTbl[39] = (int64) 2378840404;//23.78840404;
-		nGrantInflationRateTbl[40] = (int64) 2426417212;//24.26417212;
-		nGrantInflationRateTbl[41] = (int64) 2474945557;//24.74945557;
-		nGrantInflationRateTbl[42] = (int64) 2524444468;//25.24444468;
-		nGrantInflationRateTbl[43] = (int64) 2574933357;//25.74933357;
-		nGrantInflationRateTbl[44] = (int64) 2626432024;//26.26432024;
-		nGrantInflationRateTbl[45] = (int64) 2678960665;//26.78960665;
-		nGrantInflationRateTbl[46] = (int64) 2732539878;//27.32539878;
-		nGrantInflationRateTbl[47] = (int64) 2787190676;//27.87190676;
-		nGrantInflationRateTbl[48] = (int64) 2842934489;//28.42934489;
-		nGrantInflationRateTbl[49] = (int64) 2899793179;//28.99793179;
-		nGrantInflationRateTbl[50] = (int64) 2957789042;//29.57789042;
-		
-		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0] + 62046; // Year 1 - Fix
-		nInflationRateTblFix[1]  = (int64) nInflationRateTbl[1] + 44519; // Year 2 - Fix
-		nInflationRateTblFix[2]  = (int64) nInflationRateTbl[2] + 34559; // Year 3 - Fix
-		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3] + 64080;
-		nInflationRateTblFix[4]  = (int64) nInflationRateTbl[4] + 27360;
-		nInflationRateTblFix[5]  = (int64) nInflationRateTbl[5] + 4320;
-		nInflationRateTblFix[6]  = (int64) nInflationRateTbl[6] + 59444;
-		nInflationRateTblFix[7]  = (int64) nInflationRateTbl[7] + 42291;
-		nInflationRateTblFix[8]  = (int64) nInflationRateTbl[8] + 44447;
-		nInflationRateTblFix[9]  = (int64) nInflationRateTbl[9] + 6023;
+		nGrantInflationRateTbl[0]  = (int64) 183150183; // 1.83150183
+		nGrantInflationRateTbl[1]  = (int64) 186813186; // 1.86813186
+		nGrantInflationRateTbl[2]  = (int64) 190549450; // 1.90549450
+		nGrantInflationRateTbl[3]  = (int64) 194360439; // 1.94360439
+		nGrantInflationRateTbl[4]  = (int64) 198247648; // 1.98247648
+		nGrantInflationRateTbl[5]  = (int64) 202212601; // 2.02212601
+		nGrantInflationRateTbl[6]  = (int64) 206256853; // 2.06256853
+		nGrantInflationRateTbl[7]  = (int64) 210381990; // 2.10381990
+		nGrantInflationRateTbl[8]  = (int64) 214589630; // 2.14589630
+		nGrantInflationRateTbl[9]  = (int64) 218881422; // 2.18881422
+		nGrantInflationRateTbl[10]  = (int64) 223259051; // 2.23259051
+		nGrantInflationRateTbl[11] = (int64) 227724232; // 2.27724232
+		nGrantInflationRateTbl[12] = (int64) 232278716; // 2.32278716
+		nGrantInflationRateTbl[13] = (int64) 236924291; // 2.36924291
+		nGrantInflationRateTbl[14] = (int64) 241662777; // 2.41662777
+		nGrantInflationRateTbl[15] = (int64) 246496032; // 2.46496032
+		nGrantInflationRateTbl[16] = (int64) 251425953; // 2.51425953
+		nGrantInflationRateTbl[17] = (int64) 256454472; // 2.56454472
+		nGrantInflationRateTbl[18] = (int64) 261583561; // 2.61583561
+		nGrantInflationRateTbl[19] = (int64) 266815233; // 2.66815233
+		nGrantInflationRateTbl[20] = (int64) 272151537; // 2.72151537
+		nGrantInflationRateTbl[21] = (int64) 277594568; // 2.77594568
+		nGrantInflationRateTbl[22] = (int64) 283146459; // 2.83146459
+		nGrantInflationRateTbl[23] = (int64) 288809389; // 2.88809389
+		nGrantInflationRateTbl[24] = (int64) 294585576; // 2.94585576
+		nGrantInflationRateTbl[25] = (int64) 300477288; // 3.00477288
+		nGrantInflationRateTbl[26] = (int64) 306486834; // 3.06486834
+		nGrantInflationRateTbl[27] = (int64) 312616570; // 3.12616570
+		nGrantInflationRateTbl[28] = (int64) 318868902; // 3.18868902
+		nGrantInflationRateTbl[29] = (int64) 325246280; // 3.25246280
+		nGrantInflationRateTbl[30] = (int64) 331751205; // 3.31751205
+		nGrantInflationRateTbl[31] = (int64) 338386229; // 3.38386229
+		nGrantInflationRateTbl[32] = (int64) 345153954; // 3.45153954
+		nGrantInflationRateTbl[33] = (int64) 352057033; // 3.52057033
+		nGrantInflationRateTbl[34] = (int64) 359098174; // 3.59098174
+		nGrantInflationRateTbl[35] = (int64) 366280137; // 3.66280137
+		nGrantInflationRateTbl[36] = (int64) 373605740; // 3.73605740
+		nGrantInflationRateTbl[37] = (int64) 381077855; // 3.81077855
+		nGrantInflationRateTbl[38] = (int64) 388699412; // 3.88699412
+		nGrantInflationRateTbl[39] = (int64) 396473400; // 3.96473400
+		nGrantInflationRateTbl[40] = (int64) 404402868; // 4.04402868
+		nGrantInflationRateTbl[41] = (int64) 412490926; // 4.12490926
+		nGrantInflationRateTbl[42] = (int64) 420740744; // 4.20740744
+		nGrantInflationRateTbl[43] = (int64) 429155559; // 4.29155559
+		nGrantInflationRateTbl[44] = (int64) 437738670; // 4.37738670
+		nGrantInflationRateTbl[45] = (int64) 446493444; // 4.46493444
+		nGrantInflationRateTbl[46] = (int64) 455423313; // 4.55423313
+		nGrantInflationRateTbl[47] = (int64) 464531779; // 4.64531779
+		nGrantInflationRateTbl[48] = (int64) 473822414; // 4.73822414
+		nGrantInflationRateTbl[49] = (int64) 483298863; // 4.83298863
+		nGrantInflationRateTbl[50] = (int64) 492964840; // 4.92964840 (Year 51)
+
+		nInflationRateTblFix[0]  = (int64) nInflationRateTbl[0]  + 62046; // Year 1 - Fix
+		nInflationRateTblFix[1]  = (int64) nInflationRateTbl[1]  + 44519; // Year 2 - Fix
+		nInflationRateTblFix[2]  = (int64) nInflationRateTbl[2]  + 34559; // Year 3 - Fix
+		nInflationRateTblFix[3]  = (int64) nInflationRateTbl[3]  + 64080;
+		nInflationRateTblFix[4]  = (int64) nInflationRateTbl[4]  + 27360;
+		nInflationRateTblFix[5]  = (int64) nInflationRateTbl[5]  + 4320;
+		nInflationRateTblFix[6]  = (int64) nInflationRateTbl[6]  + 59444;
+		nInflationRateTblFix[7]  = (int64) nInflationRateTbl[7]  + 42291;
+		nInflationRateTblFix[8]  = (int64) nInflationRateTbl[8]  + 44447;
+		nInflationRateTblFix[9]  = (int64) nInflationRateTbl[9]  + 6023;
 		nInflationRateTblFix[10] = (int64) nInflationRateTbl[10] + 44146;
 		nInflationRateTblFix[11] = (int64) nInflationRateTbl[11] + 62057;
 		nInflationRateTblFix[12] = (int64) nInflationRateTbl[12] + 14815;
@@ -1437,16 +1437,16 @@ void PopulateRateTables(){
 	}
 	
 	if (nMaxMoneyTbl[51] != (int64) 2745417896551400){	
-		nMaxMoneyTbl[0]   = (int64) 1000000000000000;
-		nMaxMoneyTbl[1]   = (int64) 1020000000000000;
-		nMaxMoneyTbl[2]   = (int64) 1040000000000000;
-		nMaxMoneyTbl[3]   = (int64) 1061208000000000;
-		nMaxMoneyTbl[4]   = (int64) 1082432160000000;
-		nMaxMoneyTbl[5]   = (int64) 1104080803200000;
-		nMaxMoneyTbl[6]   = (int64) 1126162419264000;
-		nMaxMoneyTbl[7]   = (int64) 1148685667649280;
-		nMaxMoneyTbl[8]   = (int64) 1171659381002270;
-		nMaxMoneyTbl[9]   = (int64) 1195092568622320;
+		nMaxMoneyTbl[0]  = (int64) 1000000000000000;
+		nMaxMoneyTbl[1]  = (int64) 1020000000000000;
+		nMaxMoneyTbl[2]  = (int64) 1040000000000000;
+		nMaxMoneyTbl[3]  = (int64) 1061208000000000;
+		nMaxMoneyTbl[4]  = (int64) 1082432160000000;
+		nMaxMoneyTbl[5]  = (int64) 1104080803200000;
+		nMaxMoneyTbl[6]  = (int64) 1126162419264000;
+		nMaxMoneyTbl[7]  = (int64) 1148685667649280;
+		nMaxMoneyTbl[8]  = (int64) 1171659381002270;
+		nMaxMoneyTbl[9]  = (int64) 1195092568622320;
 		nMaxMoneyTbl[10] = (int64) 1218994419994770;
 		nMaxMoneyTbl[11] = (int64) 1243374308394670;
 		nMaxMoneyTbl[12] = (int64) 1268241794562560;
@@ -1546,7 +1546,16 @@ int64 static GetBlockSubsidy(int nHeight){
 			//NOTE: We are also FLOORING off to the nearest satoshi (8th digit), so the last block of every year will provide the remainder to get to the next year's starting point in supply. Maximum difference of (<0.000655193448) per year when rounding to nearest digit.
 			//NOTE: This is fixed in the birthday block.
 		}else if( nHeight >= YEARHEIGHT ){
-			//NOTE: Blocks 83999 - 3425519
+			//NOTE: Blocks >=84840
+			
+			//NOTE: Add more distinction for Hard Fork:
+			if ( nHeight == 85440 ) {
+				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] + 1;
+			}
+			
+			if ( nHeight == 85441 ) {
+				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] - 1;
+			}
 				//NOTE: Subtract a year and work with it. This should eventually be replaced with a faster method. (High degree of mathematics involved.)
 				//NOTE: Check if it is the last block before the start of the next year.
 				if ( ( ( nHeight - ( YEARHEIGHT - 1 ) ) % 65520 ) == 0 ){
@@ -1584,11 +1593,20 @@ int64 static GetGrantValue( int64 nHeight ){
 			return nInitialBlocksGrantTbl[ (int)( nHeight / 20 ) ];
 		}else if ( nHeight < V3FORKHEIGHT ){
 			return nV2grantrateTbl[ (int)( floor( nHeight / 1680 ) ) ];
-		}else if ( nHeight < YEARHEIGHT && nHeight >= V3SFIXHEIGHT ){
-			return nForkGrantrate2;
-		}else if ( nHeight < YEARHEIGHT ){
+		}else if ( nHeight < YEARHEIGHT ) {
+			if ( nHeight >= V3SFIXHEIGHT ){
+				return nForkGrantrate2;
+			}
 			return nForkGrantrate;
 		}else{
+			//NOTE: Year 1, Week 1: Grant Blocks between 84840 and 86099.
+			if ( nHeight <= 85380) {
+				return (int64) 1098901098; 
+				// NOTE: 10.98901098 MMC [Keep Chain without roll-back]
+			}else if ( nHeight > 85380 && nHeight <= 89880){
+				return (int64) 61050061; // 0.61050061 MMC granted
+				//NOTE: CORRECT INCORRECT GRANT AWARDS GIVEN.
+			}
 			return nGrantInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT )  ) / 65520 ) ) ];
 		}
 	}
