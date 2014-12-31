@@ -12,7 +12,7 @@
 const std::string CLIENT_NAME("Memorycoin");
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   "3.010.101"
+#define CLIENT_VERSION_SUFFIX   "3.010.102"
 
 // The following part of the code determines the CLIENT_BUILD variable.
 // Several mechanisms are used for this:
@@ -36,8 +36,8 @@ const std::string CLIENT_NAME("Memorycoin");
 // git will put "#define GIT_ARCHIVE 1" on the next line inside archives. 
 #define GIT_ARCHIVE 1
 #ifdef GIT_ARCHIVE
-#    define GIT_COMMIT_ID "v301011"
-#    define GIT_COMMIT_DATE "December 23rd, 2014 7:00PM"
+#    define GIT_COMMIT_ID "v301012"
+#    define GIT_COMMIT_DATE "December 31st, 2014 4PM"
 #endif
 
 #define BUILD_DESC_FROM_COMMIT(maj,min,rev,build,commit) \
