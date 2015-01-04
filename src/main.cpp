@@ -1195,7 +1195,8 @@ void PopulateRateTables(){
 //printf("Populate Rate Table\n");
 //SECTION: Initial Population of Memorycoin Lookup Tables.
 //
-////SECTION: Supply Tables Population.
+//
+//SECTION: Supply Tables Population.
 	//SECTION: Initial Supply Table Population
 	//
 	//NOTE: Each block is different. Adding 240 lines to unroll this loop would be a waste of file space. There is a trade-off!
@@ -1550,11 +1551,11 @@ int64 static GetBlockSubsidy(int nHeight){
 			
 			//NOTE: Add more distinction for Hard Fork:
 			if ( nHeight == 85440 ) {
-				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] + 1;
+				return (int64) ( ( nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] ) + 1 );
 			}
 			
 			if ( nHeight == 85441 ) {
-				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] - 1;
+				return (int64) ( ( nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] ) - 1 );
 			}
 				//NOTE: Subtract a year and work with it. This should eventually be replaced with a faster method. (High degree of mathematics involved.)
 				//NOTE: Check if it is the last block before the start of the next year.
@@ -1603,7 +1604,7 @@ int64 static GetGrantValue( int64 nHeight ){
 			if ( nHeight <= 85380) {
 				return (int64) 1098901098; 
 				// NOTE: 10.98901098 MMC [Keep Chain without roll-back]
-			}else if ( nHeight > 85380 && nHeight <= 89880){
+			}else if ( nHeight <= 89880 ){
 				return (int64) 61050061; // 0.61050061 MMC granted
 				//NOTE: CORRECT INCORRECT GRANT AWARDS GIVEN.
 			}
