@@ -6793,7 +6793,7 @@ void printBalances( int64 howMany, bool printVoting, bool printWasted ){
 
 bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 	
-    printf( " === Memorycoin Client === \n getGrantAwardsFromDatabaseForBlock %llu\n Size of Voting Preferences (DEBUG)", nHeight, sizeof(votingPreferences) );
+    printf( " === Memorycoin Client === \n getGrantAwardsFromDatabaseForBlock %llu\n Size of Voting Preferences: %\n", nHeight, sizeof(votingPreferences) );
 	if (
 		( nHeight <= V3FORKHEIGHT
 			&& 
