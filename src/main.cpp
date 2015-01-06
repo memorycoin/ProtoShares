@@ -1550,11 +1550,11 @@ int64 static GetBlockSubsidy(int nHeight){
 			
 			//NOTE: Add more distinction for Hard Fork:
 			if ( nHeight == 85440 ) {
-				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] + 1;
+				return (int64) ( nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] ) + 1;
 			}
 			
 			if ( nHeight == 85441 ) {
-				return (int64) nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] - 1;
+				return (int64) ( nInflationRateTbl[ (int)( floor( ( nHeight - ( YEARHEIGHT - 1 )  ) / 65520 ) ) ] ) - 1;
 			}
 				//NOTE: Subtract a year and work with it. This should eventually be replaced with a faster method. (High degree of mathematics involved.)
 				//NOTE: Check if it is the last block before the start of the next year.
