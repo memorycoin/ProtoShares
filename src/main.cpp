@@ -2670,7 +2670,8 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 		{
 			//NOTE: getGrantAwards is returning false. 
 			//NOTE: This could mean the grant DB does not have enough information from previous blocks to process the current blocks.
-			if( !getGrantAwards( pindex->nHeight) ){
+			//FIXME: Make sure grant awards are loaded.
+			if( !getGrantAwards( pindex->nHeight) || !getGrantAwardsFromDatabaseForBlock( pindex->nHeight ) ){
 				return state.DoS(100, error("ConnectBlock() : grant awards error"));
 			}
 			//NOTE: Ensure fees are going to award winners.
@@ -2691,8 +2692,9 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
 			if (grantAward == 0 ){
 				//NOTE: the awards were not found.
 				printf("ERROR! No Awards found.\n");
+				return state.DoS(100, error("ConnectBlock() : grant awards error"));
 			}
-			//NOTE: ...again?
+			//NOTE: ...again
 			for( gait = grantAwards.begin();
 				gait != grantAwards.end();
 				++gait)
@@ -5306,7 +5308,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 		printf("Entering grant Award\n");
 	if( isGrantAwardBlock( pindexBest->nHeight + 1 ) )
 		{
-			if( !getGrantAwards( pindexBest->nHeight + 1 ) ){
+			if( !getGrantAwards( pindexBest->nHeight + 1 ) || !getGrantAwardsFromDatabaseForBlock( pindexBest->nHeight + 1 ) ){
 				throw std::runtime_error( "ConnectBlock() : Connect Block grant awards error.\n" );
 			}
 				
@@ -6464,9 +6466,12 @@ bool ensureGrantDatabaseUptoDate(int64 nHeight){
 	}*/
  	printf("=== Memorycoin Client: Making sure that Grant Database is up to date. ===\n=== Required Height of Database: %lld, Height requested from: %d ===\n",requiredGrantDatabaseHeight, nHeight);
     //Maybe we don't have to count votes from the start - let's check if there's a recent vote database stored
-    if( grantDatabaseBlockHeight == -1){
-			deSerializeGrantDB( ( GetDataDir() / "blocks/grantdb.dat" ).string().c_str(), requiredGrantDatabaseHeight );
-	}
+    
+	//FIXME: THIS ALWAYS SHOULD BE PRELOADED.
+	//if( grantDatabaseBlockHeight == -1){
+		printf("=== Memorycoin Client: Deserialize Grant Database !! ===\n");
+		deSerializeGrantDB( ( GetDataDir() / "blocks/grantdb.dat" ).string().c_str(), requiredGrantDatabaseHeight );
+	//}
  
  
  //NOTE: This has been removed... why?
@@ -6788,7 +6793,7 @@ void printBalances( int64 howMany, bool printVoting, bool printWasted ){
 
 bool getGrantAwardsFromDatabaseForBlock(int64 nHeight){
 	
-    printf( " === Memorycoin Client === \n getGrantAwardsFromDatabaseForBlock %llu\n", nHeight );
+    printf( " === Memorycoin Client === \n getGrantAwardsFromDatabaseForBlock %llu\n Size of Voting Preferences (DEBUG)", nHeight, sizeof(votingPreferences) );
 	if (
 		( nHeight <= V3FORKHEIGHT
 			&& 
