@@ -1202,37 +1202,33 @@ static const char *strMainNetDNSSeed[][2] = {
 	//SECTION: MMC-Square Server Churn Nodes
 		//
 	//NOTE: Maintained by MMC Dev. Team
-	{"173.208.222.162","173.208.222.162"},
-	{"23.229.7.140","23.229.7.140"},
-	{"23.239.64.44","23.239.64.44"},
+	{"69.30.249.2","69.30.249.2"},
+	{"104.223.6.205","104.223.6.205"},
+	{"192.187.113.218","192.187.113.218"},
 	//
     	{NULL, NULL}
 };
 
 static const string strMainNetChurnNodesNonDefault[] = {
 	//SECTION: Mmc-square Churn Performance Nodes (4)
-		//
 	//NOTE: Maintained by MMC Dev. Team
-    "173.208.222.162:1969",
-    "173.208.222.162:1970",
-    "173.208.222.162:1971",
-	
-    "23.229.7.140:1971",
-    "23.229.7.140:1972",
-    "23.229.7.140:1973"
+    "192.187.113.218:1969",
+    "192.187.113.218:1970",
+    "104.223.6.205:1969",
+    "69.30.249.2:1969"
 };
 
 static const string strMainNetStandardNodesNonDefault[] = {
 	//SECTION: Standard Nodes: For normal network usage
 	//
-	"23.229.7.140:1969",
-	"23.229.7.140:1970",
-	
-	"23.239.64.44:1969",
-	"23.239.64.44:1970",
-	"23.239.64.44:1971",
-	"23.239.64.44:1972",
-	"23.239.64.44:1973"
+	"104.223.6.205:1970",
+	"69.30.249.2:1970",
+	"192.187.113.218:1970",
+	"192.187.113.218:1971",
+	"192.187.113.218:1972",
+	"192.187.113.218:1973",
+	"192.187.113.218:1974",
+	"23.229.7.140:1968"
 	};
 static const char *strTestNetDNSSeed[][2] = {
     // {"bitcoin.petertodd.org", "testnet-seed.bitcoin.petertodd.org"},
